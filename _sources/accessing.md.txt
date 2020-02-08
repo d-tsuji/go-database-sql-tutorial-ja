@@ -1,8 +1,3 @@
----
-layout: article
-title: Accessing the Database
----
-
 Now that you've loaded the driver package, you're ready to create a database
 object, a `sql.DB`.
 

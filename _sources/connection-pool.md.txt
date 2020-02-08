@@ -1,8 +1,3 @@
----
-layout: article
-title: The Connection Pool
----
-
 There is a basic connection pool in the `database/sql` package. There isn't a
 lot of ability to control or inspect it, but here are some things you might find
 useful to know:

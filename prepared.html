@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>layout: article title: Using Prepared Statements &#8212; Go database/sql tutorial  ドキュメント</title>
+    <title>Prepared Statements And Connections &#8212; Go database/sql tutorial  ドキュメント</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -31,15 +31,10 @@
 
           <div class="body" role="main">
             
-  <hr class="docutils" />
-<div class="section" id="layout-article-title-using-prepared-statements">
-<h1>layout: article
-title: Using Prepared Statements<a class="headerlink" href="#layout-article-title-using-prepared-statements" title="このヘッドラインへのパーマリンク">¶</a></h1>
-<p>Prepared statements have all the usual benefits in Go: security, efficiency,
+  <p>Prepared statements have all the usual benefits in Go: security, efficiency,
 convenience. But the way they're implemented is a little different from what
 you might be used to, especially with regards to how they interact with some of
 the internals of <code class="docutils literal notranslate"><span class="pre">database/sql</span></code>.</p>
-</div>
 <div class="section" id="prepared-statements-and-connections">
 <h1>Prepared Statements And Connections<a class="headerlink" href="#prepared-statements-and-connections" title="このヘッドラインへのパーマリンク">¶</a></h1>
 <p>At the database level, a prepared statement is bound to a single database
@@ -160,9 +155,7 @@ VALUES(?, ?, ?)     VALUES($1, $2, $3)    VALUES(:val1, :val2, :val3)
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">目次</a></h3>
   <ul>
-<li><a class="reference internal" href="#">layout: article
-title: Using Prepared Statements</a></li>
-<li><a class="reference internal" href="#prepared-statements-and-connections">Prepared Statements And Connections</a></li>
+<li><a class="reference internal" href="#">Prepared Statements And Connections</a></li>
 <li><a class="reference internal" href="#avoiding-prepared-statements">Avoiding Prepared Statements</a></li>
 <li><a class="reference internal" href="#prepared-statements-in-transactions">Prepared Statements in Transactions</a></li>
 <li><a class="reference internal" href="#parameter-placeholder-syntax">Parameter Placeholder Syntax</a></li>
@@ -184,11 +177,11 @@ title: Using Prepared Statements</a></li>
     <h4>Page Info</h4>
     <p>
         <ul>
-            <li>英数記号: 5258</li>
+            <li>英数記号: 5210</li>
             <li>非アスキー: 0</li>
-            <li>合計文字数: 5258</li>
-            <li>半角換算: 5258</li>
-            <li>全角換算: 2629.0</li>
+            <li>合計文字数: 5210</li>
+            <li>半角換算: 5210</li>
+            <li>全角換算: 2605.0</li>
         </ul>
     </p>
 </div>

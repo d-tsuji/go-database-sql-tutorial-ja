@@ -1,8 +1,3 @@
----
-layout: article
-title: Handling Errors
----
-
 Almost all operations with `database/sql` types return an error as the last
 value. You should always check these errors, never ignore them.
 

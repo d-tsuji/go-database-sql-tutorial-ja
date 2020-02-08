@@ -1,8 +1,3 @@
----
-layout: article
-title: Retrieving Result Sets
----
-
 There are several idiomatic operations to retrieve results from the datastore.
 
 1. Execute a query that returns rows.

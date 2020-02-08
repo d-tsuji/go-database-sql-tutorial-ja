@@ -1,8 +1,3 @@
----
-layout: article
-title: Modifying Data and Using Transactions
----
-
 Now we're ready to see how to modify data and work with transactions. The
 distinction might seem artificial if you're used to programming languages that
 use a "statement" object for fetching rows as well as updating data, but in Go,

@@ -1,8 +1,3 @@
----
-layout: article
-title: Using Prepared Statements
----
-
 Prepared statements have all the usual benefits in Go: security, efficiency,
 convenience. But the way they're implemented is a little different from what
 you might be used to, especially with regards to how they interact with some of

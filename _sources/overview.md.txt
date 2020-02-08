@@ -1,8 +1,3 @@
-To access databases in Go, you use a `sql.DB`. You use this type to create
-statements and transactions, execute queries, and fetch results.
-
-The first thing you should know is that **a `sql.DB` isn't a database
-connection**. It also doesn't map to any particular database software's notion
 of a "database" or "schema." It's an abstraction of the interface and existence
 of a database, which might be as varied as a local file, accessed through a network
 connection, or in-memory and in-process.

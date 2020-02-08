@@ -1,8 +1,3 @@
----
-layout: article
-title: Working with NULLs
----
-
 Nullable columns are annoying and lead to a lot of ugly code. If you can, avoid
 them. If not, then you'll need to use special types from the `database/sql`
 package to handle them, or define your own.
