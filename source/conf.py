@@ -64,7 +64,7 @@ todo_include_todos = True
 html_theme = 'alabaster'
 
 html_theme_options = {
-    'font_family': 'Menlo',
+    'font_family': 'sans-serif',
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
