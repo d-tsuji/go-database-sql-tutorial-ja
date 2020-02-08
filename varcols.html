@@ -1,0 +1,147 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>layout: article title: Working with Unknown Columns &#8212; Go database/sql tutorial  ドキュメント</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script type="text/javascript" src="_static/translations.js"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="検索" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <hr class="docutils" />
+<div class="section" id="layout-article-title-working-with-unknown-columns">
+<h1>layout: article
+title: Working with Unknown Columns<a class="headerlink" href="#layout-article-title-working-with-unknown-columns" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">Scan()</span></code> function requires you to pass exactly the right number of
+destination variables. What if you don't know what the query will return?</p>
+<p>If you don't know how many columns the query will return, you can use
+<code class="docutils literal notranslate"><span class="pre">Columns()</span></code> to find a list of column names. You can examine the length of this
+list to see how many columns there are, and you can pass a slice into <code class="docutils literal notranslate"><span class="pre">Scan()</span></code>
+with the correct number of values. For example, some forks of MySQL return
+different columns for the <code class="docutils literal notranslate"><span class="pre">SHOW</span> <span class="pre">PROCESSLIST</span></code> command, so you have to be prepared
+for that or you'll cause an error. Here's one way to do it; there are others:</p>
+<pre class="prettyprint lang-go">
+cols, err := rows.Columns()
+if err != nil {
+	// handle the error
+} else {
+	dest := []interface{}{ // Standard MySQL columns
+		new(uint64), // id
+		new(string), // host
+		new(string), // user
+		new(string), // db
+		new(string), // command
+		new(uint32), // time
+		new(string), // state
+		new(string), // info
+	}
+	if len(cols) == 11 {
+		// Percona Server
+	} else if len(cols) &gt; 8 {
+		// Handle this case
+	}
+	err = rows.Scan(dest...)
+	// Work with the values in dest
+}
+</pre><p>If you don't know the columns or their types, you should use <code class="docutils literal notranslate"><span class="pre">sql.RawBytes</span></code>.</p>
+<pre class="prettyprint lang-go">
+cols, err := rows.Columns() // Remember to check err afterwards
+vals := make([]interface{}, len(cols))
+for i, _ := range cols {
+	vals[i] = new(sql.RawBytes)
+}
+for rows.Next() {
+	err = rows.Scan(vals...)
+	// Now you can check each element of vals for nil-ness,
+	// and you can use type introspection and type assertions
+	// to fetch the column into a typed variable.
+}
+</pre><p><strong>Previous: <a class="reference external" href="nulls.html">Working with NULLs</a></strong>
+<strong>Next: <a class="reference external" href="connection-pool.html">The Connection Pool</a></strong></p>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>このページ</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/varcols.md.txt"
+            rel="nofollow">ソースコードを表示</a></li>
+    </ul>
+   </div><div>
+    <h4>Page Info</h4>
+    <p>
+        <ul>
+            <li>英数記号: 1693</li>
+            <li>非アスキー: 0</li>
+            <li>合計文字数: 1693</li>
+            <li>半角換算: 1693</li>
+            <li>全角換算: 846.5</li>
+        </ul>
+    </p>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;VividCortex (translated by @d-tsuji).
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/varcols.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>layout: article title: Modifying Data and Using Transactions &#8212; Go database/sql tutorial  ドキュメント</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script type="text/javascript" src="_static/translations.js"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="検索" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <hr class="docutils" />
+<div class="section" id="layout-article-title-modifying-data-and-using-transactions">
+<h1>layout: article
+title: Modifying Data and Using Transactions<a class="headerlink" href="#layout-article-title-modifying-data-and-using-transactions" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p>Now we're ready to see how to modify data and work with transactions. The
+distinction might seem artificial if you're used to programming languages that
+use a &quot;statement&quot; object for fetching rows as well as updating data, but in Go,
+there's an important reason for the difference.</p>
+</div>
+<div class="section" id="statements-that-modify-data">
+<h1>Statements that Modify Data<a class="headerlink" href="#statements-that-modify-data" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p>Use <code class="docutils literal notranslate"><span class="pre">Exec()</span></code>, preferably with a prepared statement, to accomplish an <code class="docutils literal notranslate"><span class="pre">INSERT</span></code>,
+<code class="docutils literal notranslate"><span class="pre">UPDATE</span></code>, <code class="docutils literal notranslate"><span class="pre">DELETE</span></code>, or another statement that doesn't return rows. The following
+example shows how to insert a row and inspect metadata about the operation:</p>
+<pre class="prettyprint lang-go">
+stmt, err := db.Prepare("INSERT INTO users(name) VALUES(?)")
+if err != nil {
+	log.Fatal(err)
+}
+res, err := stmt.Exec("Dolly")
+if err != nil {
+	log.Fatal(err)
+}
+lastId, err := res.LastInsertId()
+if err != nil {
+	log.Fatal(err)
+}
+rowCnt, err := res.RowsAffected()
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("ID = %d, affected = %d\n", lastId, rowCnt)
+</pre><p>Executing the statement produces a <code class="docutils literal notranslate"><span class="pre">sql.Result</span></code> that gives access to statement
+metadata: the last inserted ID and the number of rows affected.</p>
+<p>What if you don't care about the result? What if you just want to execute a
+statement and check if there were any errors, but ignore the result? Wouldn't
+the following two statements do the same thing?</p>
+<pre class="prettyprint lang-go">
+_, err := db.Exec("DELETE FROM users")  // OK
+_, err := db.Query("DELETE FROM users") // BAD
+</pre><p>The answer is no. They do <strong>not</strong> do the same thing, and <strong>you should never use
+<code class="docutils literal notranslate"><span class="pre">Query()</span></code> like this.</strong> The <code class="docutils literal notranslate"><span class="pre">Query()</span></code> will return a <code class="docutils literal notranslate"><span class="pre">sql.Rows</span></code>, which reserves a
+database connection until the <code class="docutils literal notranslate"><span class="pre">sql.Rows</span></code> is closed.
+Since there might be unread data (e.g. more data rows), the connection can not
+be used. In the example above, the connection will <em>never</em> be released again.
+The garbage collector will eventually close the underlying <code class="docutils literal notranslate"><span class="pre">net.Conn</span></code> for you,
+but this might take a long time. Moreover the database/sql package keeps
+tracking the connection in its pool, hoping that you release it at some point,
+so that the connection can be used again.
+This anti-pattern is therefore a good way to run out of resources (too many
+connections, for example).</p>
+</div>
+<div class="section" id="working-with-transactions">
+<h1>Working with Transactions<a class="headerlink" href="#working-with-transactions" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p>In Go, a transaction is essentially an object that reserves a connection to the
+datastore. It lets you do all of the operations we've seen thus far, but
+guarantees that they'll be executed on the same connection.</p>
+<p>You begin a transaction with a call to <code class="docutils literal notranslate"><span class="pre">db.Begin()</span></code>, and close it with a
+<code class="docutils literal notranslate"><span class="pre">Commit()</span></code> or <code class="docutils literal notranslate"><span class="pre">Rollback()</span></code> method on the resulting <code class="docutils literal notranslate"><span class="pre">Tx</span></code> variable. Under the
+covers, the <code class="docutils literal notranslate"><span class="pre">Tx</span></code> gets a connection from the pool, and reserves it for use only
+with that transaction. The methods on the <code class="docutils literal notranslate"><span class="pre">Tx</span></code> map one-for-one to methods you
+can call on the database itself, such as <code class="docutils literal notranslate"><span class="pre">Query()</span></code> and so forth.</p>
+<p>Prepared statements that are created in a transaction are bound exclusively to
+that transaction. See <a class="reference external" href="prepared.html">prepared statements</a> for more.</p>
+<p>You should not mingle the use of transaction-related functions such as <code class="docutils literal notranslate"><span class="pre">Begin()</span></code>
+and <code class="docutils literal notranslate"><span class="pre">Commit()</span></code> with SQL statements such as <code class="docutils literal notranslate"><span class="pre">BEGIN</span></code> and <code class="docutils literal notranslate"><span class="pre">COMMIT</span></code> in your SQL
+code. Bad things might result:</p>
+<ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">Tx</span></code> objects could remain open, reserving a connection from the pool and not returning it.</p></li>
+<li><p>The state of the database could get out of sync with the state of the Go variables representing it.</p></li>
+<li><p>You could believe you're executing queries on a single connection, inside of a transaction, when in reality Go has created several connections for you invisibly and some statements aren't part of the transaction.</p></li>
+</ul>
+<p>While you are working inside a transaction you should be careful not to make
+calls to the <code class="docutils literal notranslate"><span class="pre">db</span></code> variable. Make all of your calls to the <code class="docutils literal notranslate"><span class="pre">Tx</span></code> variable that you
+created with <code class="docutils literal notranslate"><span class="pre">db.Begin()</span></code>. <code class="docutils literal notranslate"><span class="pre">db</span></code> is not in a transaction, only the <code class="docutils literal notranslate"><span class="pre">Tx</span></code> object is.
+If you make further calls to <code class="docutils literal notranslate"><span class="pre">db.Exec()</span></code> or similar, those will happen outside
+the scope of your transaction, on other connections.</p>
+<p>If you need to work with multiple statements that modify connection state, you
+need a <code class="docutils literal notranslate"><span class="pre">Tx</span></code> even if you don't want a transaction per se. For example:</p>
+<ul class="simple">
+<li><p>Creating temporary tables, which are only visible to one connection.</p></li>
+<li><p>Setting variables, such as MySQL's <code class="docutils literal notranslate"><span class="pre">SET</span> <span class="pre">&#64;var</span> <span class="pre">:=</span> <span class="pre">somevalue</span></code> syntax.</p></li>
+<li><p>Changing connection options, such as character sets or timeouts.</p></li>
+</ul>
+<p>If you need to do any of these things, you need to bind your activity to a
+single connection, and the only way to do that in Go is to use a <code class="docutils literal notranslate"><span class="pre">Tx</span></code>.</p>
+<p><strong>Previous: <a class="reference external" href="retrieving.html">Retrieving Result Sets</a></strong>
+<strong>Next: <a class="reference external" href="prepared.html">Using Prepared Statements</a></strong></p>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">目次</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">layout: article
+title: Modifying Data and Using Transactions</a></li>
+<li><a class="reference internal" href="#statements-that-modify-data">Statements that Modify Data</a></li>
+<li><a class="reference internal" href="#working-with-transactions">Working with Transactions</a></li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>このページ</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/modifying.md.txt"
+            rel="nofollow">ソースコードを表示</a></li>
+    </ul>
+   </div><div>
+    <h4>Page Info</h4>
+    <p>
+        <ul>
+            <li>英数記号: 4396</li>
+            <li>非アスキー: 0</li>
+            <li>合計文字数: 4396</li>
+            <li>半角換算: 4396</li>
+            <li>全角換算: 2198.0</li>
+        </ul>
+    </p>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;VividCortex (translated by @d-tsuji).
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/modifying.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

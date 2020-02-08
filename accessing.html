@@ -1,0 +1,149 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>layout: article title: Accessing the Database &#8212; Go database/sql tutorial  ドキュメント</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script type="text/javascript" src="_static/translations.js"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="検索" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <hr class="docutils" />
+<div class="section" id="layout-article-title-accessing-the-database">
+<h1>layout: article
+title: Accessing the Database<a class="headerlink" href="#layout-article-title-accessing-the-database" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p>Now that you've loaded the driver package, you're ready to create a database
+object, a <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code>.</p>
+<p>To create a <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code>, you use <code class="docutils literal notranslate"><span class="pre">sql.Open()</span></code>. This returns a <code class="docutils literal notranslate"><span class="pre">*sql.DB</span></code>:</p>
+<pre class="prettyprint lang-go">
+func main() {
+	db, err := sql.Open("mysql",
+		"user:password@tcp(127.0.0.1:3306)/hello")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+}
+</pre><p>In the example shown, we're illustrating several things:</p>
+<ol class="simple">
+<li><p>The first argument to <code class="docutils literal notranslate"><span class="pre">sql.Open</span></code> is the driver name. This is the string that the driver used to register itself with <code class="docutils literal notranslate"><span class="pre">database/sql</span></code>, and is conventionally the same as the package name to avoid confusion. For example, it's <code class="docutils literal notranslate"><span class="pre">mysql</span></code> for <a class="reference external" href="https://github.com/go-sql-driver/mysql">github.com/go-sql-driver/mysql</a>. Some drivers do not follow the convention and use the database name, e.g. <code class="docutils literal notranslate"><span class="pre">sqlite3</span></code> for <a class="reference external" href="https://github.com/mattn/go-sqlite3">github.com/mattn/go-sqlite3</a> and <code class="docutils literal notranslate"><span class="pre">postgres</span></code> for <a class="reference external" href="https://github.com/lib/pq">github.com/lib/pq</a>.</p></li>
+<li><p>The second argument is a driver-specific syntax that tells the driver how to access the underlying datastore. In this example, we're connecting to the &quot;hello&quot; database inside a local MySQL server instance.</p></li>
+<li><p>You should (almost) always check and handle errors returned from all <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> operations.  There are a few special cases that we'll discuss later where it doesn't make sense to do this.</p></li>
+<li><p>It is idiomatic to <code class="docutils literal notranslate"><span class="pre">defer</span> <span class="pre">db.Close()</span></code> if the <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> should not have a lifetime beyond the scope of the function.</p></li>
+</ol>
+<p>Perhaps counter-intuitively, <code class="docutils literal notranslate"><span class="pre">sql.Open()</span></code> <strong>does not establish any connections
+to the database</strong>, nor does it validate driver connection parameters. Instead,
+it simply prepares the database abstraction for later use. The first actual
+connection to the underlying datastore will be established lazily, when it's
+needed for the first time. If you want to check right away that the database is
+available and accessible (for example, check that you can establish a network
+connection and log in), use <code class="docutils literal notranslate"><span class="pre">db.Ping()</span></code> to do that, and remember to check for
+errors:</p>
+<pre class="prettyprint lang-go">
+err = db.Ping()
+if err != nil {
+	// do something here
+}
+</pre><p>Although it's idiomatic to <code class="docutils literal notranslate"><span class="pre">Close()</span></code> the database when you're finished with it,
+<strong>the <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> object is designed to be long-lived.</strong> Don't <code class="docutils literal notranslate"><span class="pre">Open()</span></code> and
+<code class="docutils literal notranslate"><span class="pre">Close()</span></code> databases frequently. Instead, create <strong>one</strong> <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> object for each
+distinct datastore you need to access, and keep it until the program is done
+accessing that datastore. Pass it around as needed, or make it available somehow
+globally, but keep it open. And don't <code class="docutils literal notranslate"><span class="pre">Open()</span></code> and <code class="docutils literal notranslate"><span class="pre">Close()</span></code> from a short-lived
+function. Instead, pass the <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> into that short-lived function as an
+argument.</p>
+<p>If you don't treat the <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> as a long-lived object, you could experience
+problems such as poor reuse and sharing of connections, running out of available
+network resources, or sporadic failures due to a lot of TCP connections
+remaining in <code class="docutils literal notranslate"><span class="pre">TIME_WAIT</span></code> status. Such problems are signs that you're not using
+<code class="docutils literal notranslate"><span class="pre">database/sql</span></code> as it was designed.</p>
+<p>Now it's time to use your <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> object.</p>
+<p><strong>Previous: <a class="reference external" href="importing.html">Importing a Database Driver</a></strong>
+<strong>Next: <a class="reference external" href="retrieving.html">Retrieving Result Sets</a></strong></p>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>このページ</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/accessing.md.txt"
+            rel="nofollow">ソースコードを表示</a></li>
+    </ul>
+   </div><div>
+    <h4>Page Info</h4>
+    <p>
+        <ul>
+            <li>英数記号: 2973</li>
+            <li>非アスキー: 0</li>
+            <li>合計文字数: 2973</li>
+            <li>半角換算: 2973</li>
+            <li>全角換算: 1486.5</li>
+        </ul>
+    </p>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;VividCortex (translated by @d-tsuji).
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/accessing.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

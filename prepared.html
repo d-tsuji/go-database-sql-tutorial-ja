@@ -1,0 +1,225 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>layout: article title: Using Prepared Statements &#8212; Go database/sql tutorial  ドキュメント</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script type="text/javascript" src="_static/translations.js"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="検索" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <hr class="docutils" />
+<div class="section" id="layout-article-title-using-prepared-statements">
+<h1>layout: article
+title: Using Prepared Statements<a class="headerlink" href="#layout-article-title-using-prepared-statements" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p>Prepared statements have all the usual benefits in Go: security, efficiency,
+convenience. But the way they're implemented is a little different from what
+you might be used to, especially with regards to how they interact with some of
+the internals of <code class="docutils literal notranslate"><span class="pre">database/sql</span></code>.</p>
+</div>
+<div class="section" id="prepared-statements-and-connections">
+<h1>Prepared Statements And Connections<a class="headerlink" href="#prepared-statements-and-connections" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p>At the database level, a prepared statement is bound to a single database
+connection. The typical flow is that the client sends a SQL statement with
+placeholders to the server for preparation, the server responds with a statement
+ID, and then the client executes the statement by sending its ID and parameters.</p>
+<p>In Go, however, connections are not exposed directly to the user of the
+<code class="docutils literal notranslate"><span class="pre">database/sql</span></code> package. You don't prepare a statement on a connection. You
+prepare it on a <code class="docutils literal notranslate"><span class="pre">DB</span></code> or a <code class="docutils literal notranslate"><span class="pre">Tx</span></code>. And <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> has some convenience
+behaviors such as automatic retries. For these reasons, the underlying
+association between prepared statements and connections, which exists at the
+driver level, is hidden from your code.</p>
+<p>Here's how it works:</p>
+<ol class="simple">
+<li><p>When you prepare a statement, it's prepared on a connection in the pool.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">Stmt</span></code> object remembers which connection was used.</p></li>
+<li><p>When you execute the <code class="docutils literal notranslate"><span class="pre">Stmt</span></code>, it tries to use the connection. If it's not
+available because it's closed or busy doing something else, it gets another
+connection from the pool <em>and re-prepares the statement with the database on
+another connection.</em></p></li>
+</ol>
+<p>Because statements will be re-prepared as needed when their original connection
+is busy, it's possible for high-concurrency usage of the database, which may
+keep a lot of connections busy, to create a large number of prepared statements.
+This can result in apparent leaks of statements, statements being prepared and
+re-prepared more often than you think, and even running into server-side limits
+on the number of statements.</p>
+</div>
+<div class="section" id="avoiding-prepared-statements">
+<h1>Avoiding Prepared Statements<a class="headerlink" href="#avoiding-prepared-statements" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p>Go creates prepared statements for you under the covers. A simple
+<code class="docutils literal notranslate"><span class="pre">db.Query(sql,</span> <span class="pre">param1,</span> <span class="pre">param2)</span></code>, for example, works by preparing the sql, then
+executing it with the parameters and finally closing the statement.</p>
+<p>Sometimes a prepared statement is not what you want, however. There might be
+several reasons for this:</p>
+<ol class="simple">
+<li><p>The database doesn't support prepared statements. When using the MySQL
+driver, for example, you can connect to MemSQL and Sphinx, because they
+support the MySQL wire protocol. But they don't support the &quot;binary&quot; protocol
+that includes prepared statements, so they can fail in confusing ways.</p></li>
+<li><p>The statements aren't reused enough to make them worthwhile, and security
+issues are handled in other ways, so performance overhead is undesired. An
+example of this can be seen at the
+<a class="reference external" href="https://vividcortex.com/blog/2014/11/19/analyzing-prepared-statement-performance-with-vividcortex/">VividCortex blog</a>.</p></li>
+</ol>
+<p>If you don't want to use a prepared statement, you need to use <code class="docutils literal notranslate"><span class="pre">fmt.Sprint()</span></code> or
+similar to assemble the SQL, and pass this as the only argument to <code class="docutils literal notranslate"><span class="pre">db.Query()</span></code>
+or <code class="docutils literal notranslate"><span class="pre">db.QueryRow()</span></code>. And your driver needs to support plaintext query execution,
+which is added in Go 1.1 via the <code class="docutils literal notranslate"><span class="pre">Execer</span></code> and <code class="docutils literal notranslate"><span class="pre">Queryer</span></code> interfaces,
+<a class="reference external" href="http://golang.org/pkg/database/sql/driver/#Execer">documented here</a>.</p>
+</div>
+<div class="section" id="prepared-statements-in-transactions">
+<h1>Prepared Statements in Transactions<a class="headerlink" href="#prepared-statements-in-transactions" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p>Prepared statements that are created in a <code class="docutils literal notranslate"><span class="pre">Tx</span></code> are bound exclusively to
+it, so the earlier cautions about repreparing do not apply. When
+you operate on a <code class="docutils literal notranslate"><span class="pre">Tx</span></code> object, your actions map directly to the one and only one
+connection underlying it.</p>
+<p>This also means that prepared statements created inside a <code class="docutils literal notranslate"><span class="pre">Tx</span></code> can't be used
+separately from it. Likewise, prepared statements created on a <code class="docutils literal notranslate"><span class="pre">DB</span></code> can't be
+used within a transaction, because they will be bound to a different connection.</p>
+<p>To use a prepared statement prepared outside the transaction in a <code class="docutils literal notranslate"><span class="pre">Tx</span></code>, you can use
+<code class="docutils literal notranslate"><span class="pre">Tx.Stmt()</span></code>, which will create a new transaction-specific statement from the one
+prepared outside the transaction. It does this by taking an existing prepared statement,
+setting the connection to that of the transaction and repreparing all statements every
+time they are executed. This behavior and its implementation are undesirable and there's
+even a TODO in the <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> source code to improve it; we advise against using this.</p>
+<p>Caution must be exercised when working with prepared statements in
+transactions. Consider the following example:</p>
+<pre class="prettyprint lang-go">
+tx, err := db.Begin()
+if err != nil {
+	log.Fatal(err)
+}
+defer tx.Rollback()
+stmt, err := tx.Prepare("INSERT INTO foo VALUES (?)")
+if err != nil {
+	log.Fatal(err)
+}
+defer stmt.Close() // danger!
+for i := 0; i < 10; i++ {
+	_, err = stmt.Exec(i)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+err = tx.Commit()
+if err != nil {
+	log.Fatal(err)
+}
+// stmt.Close() runs here!
+</pre><p>Before Go 1.4 closing a <code class="docutils literal notranslate"><span class="pre">*sql.Tx</span></code> released the connection associated with it back into the
+pool, but the deferred call to Close on the prepared statement was executed
+<strong>after</strong> that has happened, which could lead to concurrent access to the
+underlying connection, rendering the connection state inconsistent.
+If you use Go 1.4 or older, you should make sure the statement is always closed before the transaction is
+committed or rolled back. <a class="reference external" href="https://github.com/golang/go/issues/4459">This issue</a> was fixed in Go 1.4 by <a class="reference external" href="https://codereview.appspot.com/131650043">CR 131650043</a>.</p>
+</div>
+<div class="section" id="parameter-placeholder-syntax">
+<h1>Parameter Placeholder Syntax<a class="headerlink" href="#parameter-placeholder-syntax" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p>The syntax for placeholder parameters in prepared statements is
+database-specific. For example, comparing MySQL, PostgreSQL, and Oracle:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>MySQL               PostgreSQL            Oracle
+=====               ==========            ======
+WHERE col = ?       WHERE col = $1        WHERE col = :col
+VALUES(?, ?, ?)     VALUES($1, $2, $3)    VALUES(:val1, :val2, :val3)
+</pre></div>
+</div>
+<p><strong>Previous: <a class="reference external" href="modifying.html">Modifying Data and Using Transactions</a></strong>
+<strong>Next: <a class="reference external" href="errors.html">Handling Errors</a></strong></p>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">目次</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">layout: article
+title: Using Prepared Statements</a></li>
+<li><a class="reference internal" href="#prepared-statements-and-connections">Prepared Statements And Connections</a></li>
+<li><a class="reference internal" href="#avoiding-prepared-statements">Avoiding Prepared Statements</a></li>
+<li><a class="reference internal" href="#prepared-statements-in-transactions">Prepared Statements in Transactions</a></li>
+<li><a class="reference internal" href="#parameter-placeholder-syntax">Parameter Placeholder Syntax</a></li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>このページ</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/prepared.md.txt"
+            rel="nofollow">ソースコードを表示</a></li>
+    </ul>
+   </div><div>
+    <h4>Page Info</h4>
+    <p>
+        <ul>
+            <li>英数記号: 5258</li>
+            <li>非アスキー: 0</li>
+            <li>合計文字数: 5258</li>
+            <li>半角換算: 5258</li>
+            <li>全角換算: 2629.0</li>
+        </ul>
+    </p>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;VividCortex (translated by @d-tsuji).
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/prepared.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
