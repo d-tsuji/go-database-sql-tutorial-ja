@@ -117,29 +117,32 @@ implementation are undesirable and there's even a TODO in the
 this.</p>
 <p>Caution must be exercised when working with prepared statements in
 transactions. Consider the following example:</p>
-<pre class="prettyprint lang-go">
-tx, err := db.Begin()
-if err != nil {
-    log.Fatal(err)
-}
-defer tx.Rollback()
-stmt, err := tx.Prepare("INSERT INTO foo VALUES (?)")
-if err != nil {
-    log.Fatal(err)
-}
-defer stmt.Close() // danger!
-for i := 0; i < 10; i++ {
-    _, err = stmt.Exec(i)
-    if err != nil {
-        log.Fatal(err)
-    }
-}
-err = tx.Commit()
-if err != nil {
-    log.Fatal(err)
-}
-// stmt.Close() runs here!
-</pre><p>Before Go 1.4 closing a <code class="docutils literal notranslate"><span class="pre">*sql.Tx</span></code> released the connection associated
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
+<span class="nx">tx</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Begin</span><span class="p">()</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+    <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="k">defer</span> <span class="nx">tx</span><span class="p">.</span><span class="nx">Rollback</span><span class="p">()</span>
+<span class="nx">stmt</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">tx</span><span class="p">.</span><span class="nx">Prepare</span><span class="p">(</span><span class="s">&quot;INSERT INTO foo VALUES (?)&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+    <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="k">defer</span> <span class="nx">stmt</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span> <span class="c1">// danger!</span>
+<span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="mi">10</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+    <span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="p">=</span> <span class="nx">stmt</span><span class="p">.</span><span class="nx">Exec</span><span class="p">(</span><span class="nx">i</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+        <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="nx">err</span> <span class="p">=</span> <span class="nx">tx</span><span class="p">.</span><span class="nx">Commit</span><span class="p">()</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+    <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="c1">// stmt.Close() runs here!</span>
+<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+<p>Before Go 1.4 closing a <code class="docutils literal notranslate"><span class="pre">*sql.Tx</span></code> released the connection associated
 with it back into the pool, but the deferred call to Close on the
 prepared statement was executed <strong>after</strong> that has happened, which could
 lead to concurrent access to the underlying connection, rendering the

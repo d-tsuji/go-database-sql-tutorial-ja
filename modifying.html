@@ -35,102 +35,73 @@
             
   <div class="section" id="modifying-data-and-using-transactions">
 <h1>Modifying Data and Using Transactions<a class="headerlink" href="#modifying-data-and-using-transactions" title="このヘッドラインへのパーマリンク">¶</a></h1>
-<p>Now we're ready to see how to modify data and work with transactions.
-The distinction might seem artificial if you're used to programming
-languages that use a &quot;statement&quot; object for fetching rows as well as
-updating data, but in Go, there's an important reason for the
-difference.</p>
-<div class="section" id="statements-that-modify-data">
-<h2>Statements that Modify Data<a class="headerlink" href="#statements-that-modify-data" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<hr class="docutils" />
+<p>これで、トランザクションを用いてデータを操作する準備が整いました。行のフェッチと同様にデータの更新に &quot;ステートメント&quot; オブジェクトを使う言語に慣れている人にとっては、フェッチをトランザクション操作を区別しているのは人為的と思うかもしれません。Goでは区別する重要な理由があります。</p>
+<div class="section" id="id1">
+<h2>データを変更するステートメント<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">INSERT</span></code>, <code class="docutils literal notranslate"><span class="pre">UPDATE</span></code>, <code class="docutils literal notranslate"><span class="pre">DELETE</span></code> やその他の行を返さないステートメントを実行するためには、できればリペアードステートメントで <code class="docutils literal notranslate"><span class="pre">Exec()</span></code> を使います。以下の例は、行をInsertし、操作に関するメタデータを検査する例を示します。</p>
 <p>Use <code class="docutils literal notranslate"><span class="pre">Exec()</span></code>, preferably with a prepared statement, to accomplish an
 <code class="docutils literal notranslate"><span class="pre">INSERT</span></code>, <code class="docutils literal notranslate"><span class="pre">UPDATE</span></code>, <code class="docutils literal notranslate"><span class="pre">DELETE</span></code>, or another statement that doesn't
 return rows. The following example shows how to insert a row and inspect
 metadata about the operation:</p>
-<pre class="prettyprint lang-go">
-stmt, err := db.Prepare("INSERT INTO users(name) VALUES(?)")
-if err != nil {
-    log.Fatal(err)
-}
-res, err := stmt.Exec("Dolly")
-if err != nil {
-    log.Fatal(err)
-}
-lastId, err := res.LastInsertId()
-if err != nil {
-    log.Fatal(err)
-}
-rowCnt, err := res.RowsAffected()
-if err != nil {
-    log.Fatal(err)
-}
-log.Printf("ID = %d, affected = %d\n", lastId, rowCnt)
-</pre><p>Executing the statement produces a <code class="docutils literal notranslate"><span class="pre">sql.Result</span></code> that gives access to
-statement metadata: the last inserted ID and the number of rows
-affected.</p>
-<p>What if you don't care about the result? What if you just want to
-execute a statement and check if there were any errors, but ignore the
-result? Wouldn't the following two statements do the same thing?</p>
-<pre class="prettyprint lang-go">
-_, err := db.Exec("DELETE FROM users")  // OK
-_, err := db.Query("DELETE FROM users") // BAD
-</pre><p>The answer is no. They do <strong>not</strong> do the same thing, and <strong>you should
-never use ``Query()`` like this.</strong> The <code class="docutils literal notranslate"><span class="pre">Query()</span></code> will return a
-<code class="docutils literal notranslate"><span class="pre">sql.Rows</span></code>, which reserves a database connection until the
-<code class="docutils literal notranslate"><span class="pre">sql.Rows</span></code> is closed. Since there might be unread data (e.g. more data
-rows), the connection can not be used. In the example above, the
-connection will <em>never</em> be released again. The garbage collector will
-eventually close the underlying <code class="docutils literal notranslate"><span class="pre">net.Conn</span></code> for you, but this might
-take a long time. Moreover the database/sql package keeps tracking the
-connection in its pool, hoping that you release it at some point, so
-that the connection can be used again. This anti-pattern is therefore a
-good way to run out of resources (too many connections, for example).</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">stmt</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Prepare</span><span class="p">(</span><span class="s">&quot;INSERT INTO users(name) VALUES(?)&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+    <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="nx">res</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">stmt</span><span class="p">.</span><span class="nx">Exec</span><span class="p">(</span><span class="s">&quot;Dolly&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+    <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="nx">lastId</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">res</span><span class="p">.</span><span class="nx">LastInsertId</span><span class="p">()</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+    <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="nx">rowCnt</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">res</span><span class="p">.</span><span class="nx">RowsAffected</span><span class="p">()</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+    <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="nx">log</span><span class="p">.</span><span class="nx">Printf</span><span class="p">(</span><span class="s">&quot;ID = %d, affected = %d\n&quot;</span><span class="p">,</span> <span class="nx">lastId</span><span class="p">,</span> <span class="nx">rowCnt</span><span class="p">)</span>
+</pre></div>
 </div>
-<div class="section" id="working-with-transactions">
-<h2>Working with Transactions<a class="headerlink" href="#working-with-transactions" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>In Go, a transaction is essentially an object that reserves a connection
-to the datastore. It lets you do all of the operations we've seen thus
-far, but guarantees that they'll be executed on the same connection.</p>
-<p>You begin a transaction with a call to <code class="docutils literal notranslate"><span class="pre">db.Begin()</span></code>, and close it with
-a <code class="docutils literal notranslate"><span class="pre">Commit()</span></code> or <code class="docutils literal notranslate"><span class="pre">Rollback()</span></code> method on the resulting <code class="docutils literal notranslate"><span class="pre">Tx</span></code>
-variable. Under the covers, the <code class="docutils literal notranslate"><span class="pre">Tx</span></code> gets a connection from the pool,
-and reserves it for use only with that transaction. The methods on the
-<code class="docutils literal notranslate"><span class="pre">Tx</span></code> map one-for-one to methods you can call on the database itself,
-such as <code class="docutils literal notranslate"><span class="pre">Query()</span></code> and so forth.</p>
-<p>Prepared statements that are created in a transaction are bound
-exclusively to that transaction. See <a class="reference external" href="prepared.html">prepared
-statements</a> for more.</p>
-<p>You should not mingle the use of transaction-related functions such as
-<code class="docutils literal notranslate"><span class="pre">Begin()</span></code> and <code class="docutils literal notranslate"><span class="pre">Commit()</span></code> with SQL statements such as <code class="docutils literal notranslate"><span class="pre">BEGIN</span></code> and
-<code class="docutils literal notranslate"><span class="pre">COMMIT</span></code> in your SQL code. Bad things might result:</p>
+<p>ステートメントを実行すると、ステートメントのメタデー(例えば最後似挿入したIDや影響があった行数など)へアクセスできる <code class="docutils literal notranslate"><span class="pre">sql.Result</span></code> オブジェクトが生成されます。</p>
+<p>結果を木にする必要がない場合はどうすればよいでしょうか。ステートメントを実行してエラーをチェックしたいだけで、結果を無視したい場合はどうでしょうか。次の2つのステートメントは同じように振る舞うでしょうか？</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Exec</span><span class="p">(</span><span class="s">&quot;DELETE FROM users&quot;</span><span class="p">)</span>  <span class="c1">// OK</span>
+<span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">&quot;DELETE FROM users&quot;</span><span class="p">)</span> <span class="c1">// BAD</span>
+</pre></div>
+</div>
+<p>答えは No です。上記2つは同じことを <strong>しない</strong> ため、<code class="docutils literal notranslate"><span class="pre">Query()</span></code> をこのように使用するべきではありません。<code class="docutils literal notranslate"><span class="pre">Query()</span></code> は <code class="docutils literal notranslate"><span class="pre">sql.Rows</span></code> を返します。これは <code class="docutils literal notranslate"><span class="pre">sql.Rows</span></code> が閉じられるまでデータベースへのコネクションを保持します。未読のデータが存在する可能性があるため(データの行数が増えるなど)、コネクションを使用することができません。上記の例ではコネクションが開放されることはありません。最終的にガベージコレクタが基点になっている <code class="docutils literal notranslate"><span class="pre">net.Conn</span></code> を閉じることになりますが、これには時間がかかる場合があります。さらに、 sql/database パッケージはプール内のコネクションを追跡し続けます。ある時点でコネクションが開放され、コネクションを再利用するためです。これはコネクションが多すぎます、などといったリソース不足を引き起こすアンチパターンの一つです。</p>
+</div>
+<div class="section" id="id2">
+<h2>トランザクションの動作<a class="headerlink" href="#id2" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>Goのトランザクションは基本的にデータストアへのコネクションを保持するオブジェクトです。これにより、これまで見てきたすべての操作をすることができます。同じコネクションで実施されることが保証されます。</p>
+<p><code class="docutils literal notranslate"><span class="pre">db.Begin()</span></code> を呼び出してトランザクションを開始することができます。トランザクションを閉じるには <code class="docutils literal notranslate"><span class="pre">db.Begin()</span></code> から返される <code class="docutils literal notranslate"><span class="pre">Tx</span></code> の変数で <code class="docutils literal notranslate"><span class="pre">Commit()</span></code> や <code class="docutils literal notranslate"><span class="pre">Rollback()</span></code> メソッドを使用します。内部では <code class="docutils literal notranslate"><span class="pre">Tx</span></code> はプールからコネクションを取得し、トランザクション専用で使用するために保持します。<code class="docutils literal notranslate"><span class="pre">Tx</span></code> のメソッドは  <code class="docutils literal notranslate"><span class="pre">Query()</span></code> などのデータベースで呼び出すことができるメソッドと1対1で対応します。</p>
+<p>トランザクション内で生成されるプリペアードステートメントは、そのトランザクションのみに紐付けられます。詳しくは <a class="reference external" href="prepared.html">prepared statements</a> を参照ください。</p>
+<p>コード内で <code class="docutils literal notranslate"><span class="pre">BEGIN</span></code> や <code class="docutils literal notranslate"><span class="pre">COMMIT</span></code> SQLのステートメントと、 <code class="docutils literal notranslate"><span class="pre">Begin()</span></code> や <code class="docutils literal notranslate"><span class="pre">Commit()</span></code> というトランザクション関連する関数を混ぜるのはやめてください。悪い結果が起こる可能性があります。</p>
 <ul class="simple">
-<li><p>The <code class="docutils literal notranslate"><span class="pre">Tx</span></code> objects could remain open, reserving a connection from the
-pool and not returning it.</p></li>
-<li><p>The state of the database could get out of sync with the state of the
-Go variables representing it.</p></li>
-<li><p>You could believe you're executing queries on a single connection,
+<li><p><code class="docutils literal notranslate"><span class="pre">Tx</span></code> オブジェクトは開いたままになり、プールからコネクションを確保し、プールに戻しません。</p></li>
+<li><p>データベースの状態がトランザクションを示すGoの変数の状態と不整合になる可能性があります。</p></li>
+<li><p>実際にはGoがいくつかのユーザに見えないコネクションを生成していて、いくつかのステートメントはトランザクションの一部でない場合、トランザクション内の単一のコネクションでクエリを実行していると信じることができます。</p></li>
+</ul>
+<div class="admonition-todo admonition" id="id3">
+<p class="admonition-title">課題</p>
+<p>訳がちょっとわからない。不自然になる。</p>
+<p>You could believe you're executing queries on a single connection,
 inside of a transaction, when in reality Go has created several
 connections for you invisibly and some statements aren't part of the
-transaction.</p></li>
-</ul>
-<p>While you are working inside a transaction you should be careful not to
-make calls to the <code class="docutils literal notranslate"><span class="pre">db</span></code> variable. Make all of your calls to the <code class="docutils literal notranslate"><span class="pre">Tx</span></code>
-variable that you created with <code class="docutils literal notranslate"><span class="pre">db.Begin()</span></code>. <code class="docutils literal notranslate"><span class="pre">db</span></code> is not in a
-transaction, only the <code class="docutils literal notranslate"><span class="pre">Tx</span></code> object is. If you make further calls to
-<code class="docutils literal notranslate"><span class="pre">db.Exec()</span></code> or similar, those will happen outside the scope of your
-transaction, on other connections.</p>
-<p>If you need to work with multiple statements that modify connection
-state, you need a <code class="docutils literal notranslate"><span class="pre">Tx</span></code> even if you don't want a transaction per se.
-For example:</p>
+transaction.</p>
+</div>
+<p>トランザクション内で作業しているときは、 <code class="docutils literal notranslate"><span class="pre">db</span></code> 変数を呼び出さないように注意する必要があります。 <code class="docutils literal notranslate"><span class="pre">db.Begin()</span></code> で生成した <code class="docutils literal notranslate"><span class="pre">Tx</span></code> 変数を用いてメソッドを呼び出します。 <code class="docutils literal notranslate"><span class="pre">Tx</span></code> のみがトランザクションであって <code class="docutils literal notranslate"><span class="pre">db</span></code> ではありません。 <code class="docutils literal notranslate"><span class="pre">db.Exec()</span></code> やそれに似た呼び出しを行うと、別のコネクションでトランザクション外のスコープとして呼び出されます。</p>
+<p>トランザクションそれ自体は必要がない場合でも、コネクションの状態を変更する複数のステートメントを動作する必要がある場合は、<code class="docutils literal notranslate"><span class="pre">Tx</span></code> を使う必要があります。例えば以下のようなものです。</p>
 <ul class="simple">
-<li><p>Creating temporary tables, which are only visible to one connection.</p></li>
-<li><p>Setting variables, such as MySQL's <code class="docutils literal notranslate"><span class="pre">SET</span> <span class="pre">&#64;var</span> <span class="pre">:=</span> <span class="pre">somevalue</span></code> syntax.</p></li>
-<li><p>Changing connection options, such as character sets or timeouts.</p></li>
+<li><p>1つのコネクションから参照可能な一時的なテーブルを作成する場合</p></li>
+<li><p>MySQL の <code class="docutils literal notranslate"><span class="pre">SET</span> <span class="pre">&#64;var</span> <span class="pre">:=</span> <span class="pre">somevalue</span></code> 構文といった、変数を設定する場合</p></li>
+<li><p>タイムアウト設定などの、文字コードの設定や、コネクションのオプションを変更する場合</p></li>
 </ul>
-<p>If you need to do any of these things, you need to bind your activity to
-a single connection, and the only way to do that in Go is to use a
-<code class="docutils literal notranslate"><span class="pre">Tx</span></code>.</p>
-<p><strong>Previous: `Retrieving Result Sets &lt;retrieving.html&gt;`__</strong> <strong>Next:
-`Using Prepared Statements &lt;prepared.html&gt;`__</strong></p>
+<p>上記のいずれかを行う場合は、操作を単一のコネクション上で実施する必要があります。Goでこれらを行う唯一の方法は <code class="docutils literal notranslate"><span class="pre">Tx</span></code> を使用することです。</p>
+<div class="line-block">
+<div class="line">前に戻る: <a class="reference external" href="retrieving.html">Retrieving Result Sets</a></div>
+<div class="line">次に進む: <a class="reference external" href="prepared.html">Using Prepared Statements</a></div>
+</div>
 </div>
 </div>
 

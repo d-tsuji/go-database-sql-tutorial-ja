@@ -40,18 +40,21 @@ can, avoid them. If not, then you'll need to use special types from the
 <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> package to handle them, or define your own.</p>
 <p>There are types for nullable booleans, strings, integers, and floats.
 Here's how you use them:</p>
-<pre class="prettyprint lang-go">
-for rows.Next() {
-    var s sql.NullString
-    err := rows.Scan(s)
-    // check err
-    if s.Valid {
-       // use s.String
-    } else {
-       // NULL value
-    }
-}
-</pre><p>Limitations of the nullable types, and reasons to avoid nullable columns
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
+<span class="k">for</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Next</span><span class="p">()</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">s</span> <span class="nx">sql</span><span class="p">.</span><span class="nx">NullString</span>
+    <span class="nx">err</span> <span class="o">:=</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Scan</span><span class="p">(</span><span class="nx">s</span><span class="p">)</span>
+    <span class="c1">// check err</span>
+    <span class="k">if</span> <span class="nx">s</span><span class="p">.</span><span class="nx">Valid</span> <span class="p">{</span>
+       <span class="c1">// use s.String</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+       <span class="c1">// NULL value</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+<p>Limitations of the nullable types, and reasons to avoid nullable columns
 in case you need more convincing:</p>
 <ol class="arabic simple">
 <li><p>There's no <code class="docutils literal notranslate"><span class="pre">sql.NullUint64</span></code> or <code class="docutils literal notranslate"><span class="pre">sql.NullYourFavoriteType</span></code>. You'd
@@ -69,20 +72,23 @@ design of <code class="docutils literal notranslate"><span class="pre">sql.NullS
 work around that most database systems support, namely <code class="docutils literal notranslate"><span class="pre">COALESCE()</span></code>.
 Something like the following might be something that you can use,
 without introducing a myriad of <code class="docutils literal notranslate"><span class="pre">sql.Null*</span></code> types.</p>
-<pre class="prettyprint lang-go">
-rows, err := db.Query(`
-    SELECT
-        name,
-        COALESCE(other_field, '') as otherField
-    WHERE id = ?
-`, 42)
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
+<span class="nx">rows</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">`</span>
+<span class="s">    SELECT</span>
+<span class="s">        name,</span>
+<span class="s">        COALESCE(other_field, &#39;&#39;) as otherField</span>
+<span class="s">    WHERE id = ?</span>
+<span class="s">`</span><span class="p">,</span> <span class="mi">42</span><span class="p">)</span>
 
-for rows.Next() {
-    err := rows.Scan(&name, &otherField)
-    // ..
-    // If `other_field` was NULL, `otherField` is now an empty string. This works with other data types as well.
-}
-</pre><p><strong>Previous: `Handling Errors &lt;errors.html&gt;`__</strong> <strong>Next: `Working with
+<span class="k">for</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Next</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">err</span> <span class="o">:=</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Scan</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">name</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">otherField</span><span class="p">)</span>
+    <span class="c1">// ..</span>
+    <span class="c1">// If `other_field` was NULL, `otherField` is now an empty string. This works with other data types as well.</span>
+<span class="p">}</span>
+<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+<p><strong>Previous: `Handling Errors &lt;errors.html&gt;`__</strong> <strong>Next: `Working with
 Unknown Columns &lt;varcols.html&gt;`__</strong></p>
 </div>
 

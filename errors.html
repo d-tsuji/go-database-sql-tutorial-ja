@@ -43,14 +43,17 @@ something additional you might need to know.</p>
 <div class="section" id="errors-from-iterating-resultsets">
 <h2>Errors From Iterating Resultsets<a class="headerlink" href="#errors-from-iterating-resultsets" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>Consider the following code:</p>
-<pre class="prettyprint lang-go">
-for rows.Next() {
-    // ...
-}
-if err = rows.Err(); err != nil {
-    // handle the error here
-}
-</pre><p>The error from <code class="docutils literal notranslate"><span class="pre">rows.Err()</span></code> could be the result of a variety of errors
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
+<span class="k">for</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Next</span><span class="p">()</span> <span class="p">{</span>
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="p">=</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Err</span><span class="p">();</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+    <span class="c1">// handle the error here</span>
+<span class="p">}</span>
+<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+<p>The error from <code class="docutils literal notranslate"><span class="pre">rows.Err()</span></code> could be the result of a variety of errors
 in the <code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code> loop. The loop might exit for some reason other
 than finishing the loop normally, so you always need to check whether
 the loop terminated normally or not. An abnormal termination
@@ -62,18 +65,21 @@ multiple times.</p>
 <p>You should always explicitly close a <code class="docutils literal notranslate"><span class="pre">sql.Rows</span></code> if you exit the loop
 prematurely, as previously mentioned. It's auto-closed if the loop exits
 normally or through an error, but you might mistakenly do this:</p>
-<pre class="prettyprint lang-go">
-for rows.Next() {
-    // ...
-    break; // whoops, rows is not closed! memory leak...
-}
-// do the usual "if err = rows.Err()" [omitted here]...
-// it's always safe to [re?]close here:
-if err = rows.Close(); err != nil {
-    // but what should we do if there's an error?
-    log.Println(err)
-}
-</pre><p>The error returned by <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> is the only exception to the
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
+<span class="k">for</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Next</span><span class="p">()</span> <span class="p">{</span>
+    <span class="c1">// ...</span>
+    <span class="k">break</span><span class="p">;</span> <span class="c1">// whoops, rows is not closed! memory leak...</span>
+<span class="p">}</span>
+<span class="c1">// do the usual &quot;if err = rows.Err()&quot; [omitted here]...</span>
+<span class="c1">// it&#39;s always safe to [re?]close here:</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="p">=</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Close</span><span class="p">();</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+    <span class="c1">// but what should we do if there&#39;s an error?</span>
+    <span class="nx">log</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+<p>The error returned by <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> is the only exception to the
 general rule that it's best to capture and check for errors in all
 database operations. If <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> returns an error, it's unclear
 what you should do. Logging the error message or panicing might be the
@@ -83,14 +89,17 @@ just ignore the error.</p>
 <div class="section" id="errors-from-queryrow">
 <h2>Errors From QueryRow()<a class="headerlink" href="#errors-from-queryrow" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>Consider the following code to fetch a single row:</p>
-<pre class="prettyprint lang-go">
-var name string
-err = db.QueryRow("select name from users where id = ?", 1).Scan(name)
-if err != nil {
-    log.Fatal(err)
-}
-fmt.Println(name)
-</pre><p>What if there was no user with <code class="docutils literal notranslate"><span class="pre">id</span> <span class="pre">=</span> <span class="pre">1</span></code>? Then there would be no row in
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
+<span class="kd">var</span> <span class="nx">name</span> <span class="kt">string</span>
+<span class="nx">err</span> <span class="p">=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">QueryRow</span><span class="p">(</span><span class="s">&quot;select name from users where id = ?&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">).</span><span class="nx">Scan</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+    <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>
+<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+<p>What if there was no user with <code class="docutils literal notranslate"><span class="pre">id</span> <span class="pre">=</span> <span class="pre">1</span></code>? Then there would be no row in
 the result, and <code class="docutils literal notranslate"><span class="pre">.Scan()</span></code> would not scan a value into <code class="docutils literal notranslate"><span class="pre">name</span></code>. What
 happens then?</p>
 <p>Go defines a special error constant, called <code class="docutils literal notranslate"><span class="pre">sql.ErrNoRows</span></code>, which is
@@ -102,18 +111,21 @@ application-code errors you didn't expect.</p>
 <p>Errors from the query are deferred until <code class="docutils literal notranslate"><span class="pre">Scan()</span></code> is called, and then
 are returned from that. The above code is better written like this
 instead:</p>
-<pre class="prettyprint lang-go">
-var name string
-err = db.QueryRow("select name from users where id = ?", 1).Scan(name)
-if err != nil {
-    if err == sql.ErrNoRows {
-        // there were no rows, but otherwise no error occurred
-    } else {
-        log.Fatal(err)
-    }
-}
-fmt.Println(name)
-</pre><p>One might ask why an empty result set is considered an error. There's
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
+<span class="kd">var</span> <span class="nx">name</span> <span class="kt">string</span>
+<span class="nx">err</span> <span class="p">=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">QueryRow</span><span class="p">(</span><span class="s">&quot;select name from users where id = ?&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">).</span><span class="nx">Scan</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="nx">err</span> <span class="o">==</span> <span class="nx">sql</span><span class="p">.</span><span class="nx">ErrNoRows</span> <span class="p">{</span>
+        <span class="c1">// there were no rows, but otherwise no error occurred</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>
+<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+<p>One might ask why an empty result set is considered an error. There's
 nothing erroneous about an empty set. The reason is that the
 <code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> method needs to use this special-case in order to let the
 caller distinguish whether <code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> in fact found a row; without
@@ -125,27 +137,33 @@ you encounter this error elsewhere, you're doing something wrong.</p>
 <div class="section" id="identifying-specific-database-errors">
 <h2>Identifying Specific Database Errors<a class="headerlink" href="#identifying-specific-database-errors" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>It can be tempting to write code like the following:</p>
-<pre class="prettyprint lang-go">
-rows, err := db.Query("SELECT someval FROM sometable")
-// err contains:
-// ERROR 1045 (28000): Access denied for user 'foo'@'::1' (using password: NO)
-if strings.Contains(err.Error(), "Access denied") {
-    // Handle the permission-denied error
-}
-</pre><p>This is not the best way to do it, though. For example, the string value
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
+<span class="nx">rows</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">&quot;SELECT someval FROM sometable&quot;</span><span class="p">)</span>
+<span class="c1">// err contains:</span>
+<span class="c1">// ERROR 1045 (28000): Access denied for user &#39;foo&#39;@&#39;::1&#39; (using password: NO)</span>
+<span class="k">if</span> <span class="nx">strings</span><span class="p">.</span><span class="nx">Contains</span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nx">Error</span><span class="p">(),</span> <span class="s">&quot;Access denied&quot;</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Handle the permission-denied error</span>
+<span class="p">}</span>
+<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+<p>This is not the best way to do it, though. For example, the string value
 might vary depending on what language the server uses to send error
 messages. It's much better to compare error numbers to identify what a
 specific error is.</p>
 <p>The mechanism to do this varies between drivers, however, because this
 isn't part of <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> itself. In the MySQL driver that this
 tutorial focuses on, you could write the following code:</p>
-<pre class="prettyprint lang-go">
-if driverErr, ok := err.(*mysql.MySQLError); ok { // Now the error number is accessible directly
-    if driverErr.Number == 1045 {
-        // Handle the permission-denied error
-    }
-}
-</pre><p>Again, the <code class="docutils literal notranslate"><span class="pre">MySQLError</span></code> type here is provided by this specific driver,
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
+<span class="k">if</span> <span class="nx">driverErr</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">err</span><span class="p">.(</span><span class="o">*</span><span class="nx">mysql</span><span class="p">.</span><span class="nx">MySQLError</span><span class="p">);</span> <span class="nx">ok</span> <span class="p">{</span> <span class="c1">// Now the error number is accessible directly</span>
+    <span class="k">if</span> <span class="nx">driverErr</span><span class="p">.</span><span class="nx">Number</span> <span class="o">==</span> <span class="mi">1045</span> <span class="p">{</span>
+        <span class="c1">// Handle the permission-denied error</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+<p>Again, the <code class="docutils literal notranslate"><span class="pre">MySQLError</span></code> type here is provided by this specific driver,
 and the <code class="docutils literal notranslate"><span class="pre">.Number</span></code> field may differ between drivers. The value of the
 number, however, is taken from MySQL's error message, and is therefore
 database specific, not driver specific.</p>
@@ -157,13 +175,16 @@ driver does, for example, in
 there's an external package of <a class="reference external" href="https://github.com/VividCortex/mysqlerr">MySQL error numbers maintained by
 VividCortex</a>. Using such a
 list, the above code is better written thus:</p>
-<pre class="prettyprint lang-go">
-if driverErr, ok := err.(*mysql.MySQLError); ok {
-    if driverErr.Number == mysqlerr.ER_ACCESS_DENIED_ERROR {
-        // Handle the permission-denied error
-    }
-}
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
+<span class="k">if</span> <span class="nx">driverErr</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">err</span><span class="p">.(</span><span class="o">*</span><span class="nx">mysql</span><span class="p">.</span><span class="nx">MySQLError</span><span class="p">);</span> <span class="nx">ok</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="nx">driverErr</span><span class="p">.</span><span class="nx">Number</span> <span class="o">==</span> <span class="nx">mysqlerr</span><span class="p">.</span><span class="nx">ER_ACCESS_DENIED_ERROR</span> <span class="p">{</span>
+        <span class="c1">// Handle the permission-denied error</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
 </pre></div>
+</div>
+</div>
 <div class="section" id="handling-connection-errors">
 <h2>Handling Connection Errors<a class="headerlink" href="#handling-connection-errors" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>What if your connection to the database is dropped, killed, or has an

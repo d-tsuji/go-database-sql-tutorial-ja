@@ -2,23 +2,22 @@
 Modifying Data and Using Transactions
 ====================================================
 
-Now we're ready to see how to modify data and work with transactions.
-The distinction might seem artificial if you're used to programming
-languages that use a "statement" object for fetching rows as well as
-updating data, but in Go, there's an important reason for the
-difference.
+----------------------------------
 
-Statements that Modify Data
-===========================
+これで、トランザクションを用いてデータを操作する準備が整いました。行のフェッチと同様にデータの更新に "ステートメント" オブジェクトを使う言語に慣れている人にとっては、フェッチをトランザクション操作を区別しているのは人為的と思うかもしれません。Goでは区別する重要な理由があります。
+
+データを変更するステートメント
+===================================
+
+``INSERT``, ``UPDATE``, ``DELETE`` やその他の行を返さないステートメントを実行するためには、できればリペアードステートメントで ``Exec()`` を使います。以下の例は、行をInsertし、操作に関するメタデータを検査する例を示します。
 
 Use ``Exec()``, preferably with a prepared statement, to accomplish an
 ``INSERT``, ``UPDATE``, ``DELETE``, or another statement that doesn't
 return rows. The following example shows how to insert a row and inspect
 metadata about the operation:
 
-.. raw:: html
+.. code-block:: go
 
-   <pre class="prettyprint lang-go">
    stmt, err := db.Prepare("INSERT INTO users(name) VALUES(?)")
    if err != nil {
        log.Fatal(err)
@@ -36,84 +35,51 @@ metadata about the operation:
        log.Fatal(err)
    }
    log.Printf("ID = %d, affected = %d\n", lastId, rowCnt)
-   </pre>
 
-Executing the statement produces a ``sql.Result`` that gives access to
-statement metadata: the last inserted ID and the number of rows
-affected.
+ステートメントを実行すると、ステートメントのメタデー(例えば最後似挿入したIDや影響があった行数など)へアクセスできる ``sql.Result`` オブジェクトが生成されます。
 
-What if you don't care about the result? What if you just want to
-execute a statement and check if there were any errors, but ignore the
-result? Wouldn't the following two statements do the same thing?
+結果を木にする必要がない場合はどうすればよいでしょうか。ステートメントを実行してエラーをチェックしたいだけで、結果を無視したい場合はどうでしょうか。次の2つのステートメントは同じように振る舞うでしょうか？
 
-.. raw:: html
+.. code-block:: go
 
-   <pre class="prettyprint lang-go">
    _, err := db.Exec("DELETE FROM users")  // OK
    _, err := db.Query("DELETE FROM users") // BAD
-   </pre>
 
-The answer is no. They do **not** do the same thing, and **you should
-never use ``Query()`` like this.** The ``Query()`` will return a
-``sql.Rows``, which reserves a database connection until the
-``sql.Rows`` is closed. Since there might be unread data (e.g. more data
-rows), the connection can not be used. In the example above, the
-connection will *never* be released again. The garbage collector will
-eventually close the underlying ``net.Conn`` for you, but this might
-take a long time. Moreover the database/sql package keeps tracking the
-connection in its pool, hoping that you release it at some point, so
-that the connection can be used again. This anti-pattern is therefore a
-good way to run out of resources (too many connections, for example).
+答えは No です。上記2つは同じことを **しない** ため、``Query()`` をこのように使用するべきではありません。``Query()`` は ``sql.Rows`` を返します。これは ``sql.Rows`` が閉じられるまでデータベースへのコネクションを保持します。未読のデータが存在する可能性があるため(データの行数が増えるなど)、コネクションを使用することができません。上記の例ではコネクションが開放されることはありません。最終的にガベージコレクタが基点になっている ``net.Conn`` を閉じることになりますが、これには時間がかかる場合があります。さらに、 sql/database パッケージはプール内のコネクションを追跡し続けます。ある時点でコネクションが開放され、コネクションを再利用するためです。これはコネクションが多すぎます、などといったリソース不足を引き起こすアンチパターンの一つです。
 
-Working with Transactions
-=========================
+トランザクションの動作
+============================
 
-In Go, a transaction is essentially an object that reserves a connection
-to the datastore. It lets you do all of the operations we've seen thus
-far, but guarantees that they'll be executed on the same connection.
+Goのトランザクションは基本的にデータストアへのコネクションを保持するオブジェクトです。これにより、これまで見てきたすべての操作をすることができます。同じコネクションで実施されることが保証されます。
 
-You begin a transaction with a call to ``db.Begin()``, and close it with
-a ``Commit()`` or ``Rollback()`` method on the resulting ``Tx``
-variable. Under the covers, the ``Tx`` gets a connection from the pool,
-and reserves it for use only with that transaction. The methods on the
-``Tx`` map one-for-one to methods you can call on the database itself,
-such as ``Query()`` and so forth.
+``db.Begin()`` を呼び出してトランザクションを開始することができます。トランザクションを閉じるには ``db.Begin()`` から返される ``Tx`` の変数で ``Commit()`` や ``Rollback()`` メソッドを使用します。内部では ``Tx`` はプールからコネクションを取得し、トランザクション専用で使用するために保持します。``Tx`` のメソッドは  ``Query()`` などのデータベースで呼び出すことができるメソッドと1対1で対応します。
 
-Prepared statements that are created in a transaction are bound
-exclusively to that transaction. See `prepared
-statements <prepared.html>`__ for more.
+トランザクション内で生成されるプリペアードステートメントは、そのトランザクションのみに紐付けられます。詳しくは `prepared statements <prepared.html>`_ を参照ください。
 
-You should not mingle the use of transaction-related functions such as
-``Begin()`` and ``Commit()`` with SQL statements such as ``BEGIN`` and
-``COMMIT`` in your SQL code. Bad things might result:
+コード内で ``BEGIN`` や ``COMMIT`` SQLのステートメントと、 ``Begin()`` や ``Commit()`` というトランザクション関連する関数を混ぜるのはやめてください。悪い結果が起こる可能性があります。
 
--  The ``Tx`` objects could remain open, reserving a connection from the
-   pool and not returning it.
--  The state of the database could get out of sync with the state of the
-   Go variables representing it.
--  You could believe you're executing queries on a single connection,
-   inside of a transaction, when in reality Go has created several
-   connections for you invisibly and some statements aren't part of the
-   transaction.
+- ``Tx`` オブジェクトは開いたままになり、プールからコネクションを確保し、プールに戻しません。
+- データベースの状態がトランザクションを示すGoの変数の状態と不整合になる可能性があります。
+- 実際にはGoがいくつかのユーザに見えないコネクションを生成していて、いくつかのステートメントはトランザクションの一部でない場合、トランザクション内の単一のコネクションでクエリを実行していると信じることができます。
 
-While you are working inside a transaction you should be careful not to
-make calls to the ``db`` variable. Make all of your calls to the ``Tx``
-variable that you created with ``db.Begin()``. ``db`` is not in a
-transaction, only the ``Tx`` object is. If you make further calls to
-``db.Exec()`` or similar, those will happen outside the scope of your
-transaction, on other connections.
+.. todo::
 
-If you need to work with multiple statements that modify connection
-state, you need a ``Tx`` even if you don't want a transaction per se.
-For example:
+    訳がちょっとわからない。不自然になる。
+    
+    You could believe you're executing queries on a single connection,
+    inside of a transaction, when in reality Go has created several
+    connections for you invisibly and some statements aren't part of the
+    transaction.
 
--  Creating temporary tables, which are only visible to one connection.
--  Setting variables, such as MySQL's ``SET @var := somevalue`` syntax.
--  Changing connection options, such as character sets or timeouts.
+トランザクション内で作業しているときは、 ``db`` 変数を呼び出さないように注意する必要があります。 ``db.Begin()`` で生成した ``Tx`` 変数を用いてメソッドを呼び出します。 ``Tx`` のみがトランザクションであって ``db`` ではありません。 ``db.Exec()`` やそれに似た呼び出しを行うと、別のコネクションでトランザクション外のスコープとして呼び出されます。
 
-If you need to do any of these things, you need to bind your activity to
-a single connection, and the only way to do that in Go is to use a
-``Tx``.
+トランザクションそれ自体は必要がない場合でも、コネクションの状態を変更する複数のステートメントを動作する必要がある場合は、``Tx`` を使う必要があります。例えば以下のようなものです。
 
-**Previous: `Retrieving Result Sets <retrieving.html>`__** **Next:
-`Using Prepared Statements <prepared.html>`__**
+- 1つのコネクションから参照可能な一時的なテーブルを作成する場合
+- MySQL の ``SET @var := somevalue`` 構文といった、変数を設定する場合
+- タイムアウト設定などの、文字コードの設定や、コネクションのオプションを変更する場合
+
+上記のいずれかを行う場合は、操作を単一のコネクション上で実施する必要があります。Goでこれらを行う唯一の方法は ``Tx`` を使用することです。
+
+| 前に戻る: `Retrieving Result Sets <retrieving.html>`_
+| 次に進む: `Using Prepared Statements <prepared.html>`_

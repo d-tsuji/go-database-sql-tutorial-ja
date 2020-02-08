@@ -58,9 +58,12 @@ work can lead to a lot of extra database activity.</p></li>
 <h2>Large uint64 Values<a class="headerlink" href="#large-uint64-values" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>Here's a surprising error. You can't pass big unsigned integers as
 parameters to statements if their high bit is set:</p>
-<pre class="prettyprint lang-go">
-_, err := db.Exec("INSERT INTO users(id) VALUES", math.MaxUint64) // Error
-</pre><p>This will throw an error. Be careful if you use <code class="docutils literal notranslate"><span class="pre">uint64</span></code> values, as
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
+<span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Exec</span><span class="p">(</span><span class="s">&quot;INSERT INTO users(id) VALUES&quot;</span><span class="p">,</span> <span class="nx">math</span><span class="p">.</span><span class="nx">MaxUint64</span><span class="p">)</span> <span class="c1">// Error</span>
+<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+<p>This will throw an error. Be careful if you use <code class="docutils literal notranslate"><span class="pre">uint64</span></code> values, as
 they may start out small and work without error, but increment over time
 and start throwing errors.</p>
 </div>
@@ -108,9 +111,12 @@ multiple result sets will not work correctly.</p>
 it can't be done at present. It might seem that you'd be able to call a
 simple procedure that returns a single result set, by executing
 something like this:</p>
-<pre class="prettyprint lang-go">
-err := db.QueryRow("CALL mydb.myprocedure").Scan(result) // Error
-</pre><p>In fact, this won't work. You'll get the following error: <em>Error 1312:
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
+<span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">QueryRow</span><span class="p">(</span><span class="s">&quot;CALL mydb.myprocedure&quot;</span><span class="p">).</span><span class="nx">Scan</span><span class="p">(</span><span class="nx">result</span><span class="p">)</span> <span class="c1">// Error</span>
+<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+<p>In fact, this won't work. You'll get the following error: <em>Error 1312:
 PROCEDURE mydb.myprocedure can't return a result set in the given
 context</em>. This is because MySQL expects the connection to be set into
 multi-statement mode, even for a single result, and the driver doesn't
@@ -121,9 +127,12 @@ issue</a>).</p>
 <h2>Multiple Statement Support<a class="headerlink" href="#multiple-statement-support" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> doesn't explicitly have multiple statement support,
 which means that the behavior of this is backend dependent:</p>
-<pre class="prettyprint lang-go">
-_, err := db.Exec("DELETE FROM tbl1; DELETE FROM tbl2") // Error/unpredictable result
-</pre><p>The server is allowed to interpret this however it wants, which can
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
+<span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Exec</span><span class="p">(</span><span class="s">&quot;DELETE FROM tbl1; DELETE FROM tbl2&quot;</span><span class="p">)</span> <span class="c1">// Error/unpredictable result</span>
+<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+<p>The server is allowed to interpret this however it wants, which can
 include returning an error, executing only the first statement, or
 executing both.</p>
 <p>Similarly, there is no way to batch statements in a transaction. Each
@@ -134,24 +143,30 @@ differs from the usual behavior when you're not working with a
 transaction. In that scenario, it is perfectly possible to execute a
 query, loop over the rows, and within the loop make a query to the
 database (which will happen on a new connection):</p>
-<pre class="prettyprint lang-go">
-rows, err := db.Query("select * from tbl1") // Uses connection 1
-for rows.Next() {
-    err = rows.Scan(&myvariable)
-    // The following line will NOT use connection 1, which is already in-use
-    db.Query("select * from tbl2 where id = ?", myvariable)
-}
-</pre><p>But transactions are bound to just one connection, so this isn't
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
+<span class="nx">rows</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">&quot;select * from tbl1&quot;</span><span class="p">)</span> <span class="c1">// Uses connection 1</span>
+<span class="k">for</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Next</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">err</span> <span class="p">=</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Scan</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">myvariable</span><span class="p">)</span>
+    <span class="c1">// The following line will NOT use connection 1, which is already in-use</span>
+    <span class="nx">db</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">&quot;select * from tbl2 where id = ?&quot;</span><span class="p">,</span> <span class="nx">myvariable</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+<p>But transactions are bound to just one connection, so this isn't
 possible with a transaction:</p>
-<pre class="prettyprint lang-go">
-tx, err := db.Begin()
-rows, err := tx.Query("select * from tbl1") // Uses tx's connection
-for rows.Next() {
-    err = rows.Scan(&myvariable)
-    // ERROR! tx's connection is already busy!
-    tx.Query("select * from tbl2 where id = ?", myvariable)
-}
-</pre><p>Go doesn't stop you from trying, though. For that reason, you may wind
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
+<span class="nx">tx</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Begin</span><span class="p">()</span>
+<span class="nx">rows</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">tx</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">&quot;select * from tbl1&quot;</span><span class="p">)</span> <span class="c1">// Uses tx&#39;s connection</span>
+<span class="k">for</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Next</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">err</span> <span class="p">=</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Scan</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">myvariable</span><span class="p">)</span>
+    <span class="c1">// ERROR! tx&#39;s connection is already busy!</span>
+    <span class="nx">tx</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">&quot;select * from tbl2 where id = ?&quot;</span><span class="p">,</span> <span class="nx">myvariable</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+<p>Go doesn't stop you from trying, though. For that reason, you may wind
 up with a corrupted connection if you attempt to perform another
 statement before the first has released its resources and cleaned up
 after itself. This also means that each statement in a transaction

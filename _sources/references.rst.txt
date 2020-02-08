@@ -2,19 +2,16 @@
 Related Reading and Resources
 ==================================
 
-Here are some external sources of information we've found to be helpful.
+----------------------------------
+
+役に立つ外部リンクを示しておきます。
 
 -  http://golang.org/pkg/database/sql/
 -  http://jmoiron.net/blog/gos-database-sql/
 -  http://jmoiron.net/blog/built-in-interfaces/
--  The VividCortex blog, e.g. `transparent
-   encryption <https://vividcortex.com/blog/2014/11/11/encrypting-data-in-mysql-with-go/>`__
--  Overview of SQL Drivers from `golang
-   github <https://github.com/golang/go/wiki/SQLDrivers>`__
+-  The VividCortex blog, e.g. `transparent encryption <https://vividcortex.com/blog/2014/11/11/encrypting-data-in-mysql-with-go/>`_
+-  Overview of SQL Drivers from `golang github <https://github.com/golang/go/wiki/SQLDrivers>`_
 
-We hope you've found this website to be helpful. If you have any
-suggestions for improvements, please send pull requests or open an issue
-report at https://github.com/VividCortex/go-database-sql-tutorial.
+このサイトがお役に立てば幸いです。改善したほうが良い項目を見つけた場合、プルリクエストを送っていただくか、 https://github.com/VividCortex/go-database-sql-tutorial にIssueをあげてください。
 
-**Previous: `Surprises, Antipatterns and
-Limitations <surprises.html>`__**
+前に戻る: `Surprises, Antipatterns and Limitations <surprises.html>`_
