@@ -70,7 +70,7 @@ html_static_path = ['_static']
 
 html_sidebars = {
     # add 'pageinfo.html' to display the panel.
-    '**': ['localtoc.html', 'relations.html', 'sourcelink.html', 'pageinfo.html', 'searchbox.html']
+    '**': ['globaltoc.html']
 }
 
 # LaTeX の docclass 設定
