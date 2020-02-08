@@ -16,7 +16,7 @@ forks of MySQL return different columns for the ``SHOW PROCESSLIST``
 command, so you have to be prepared for that or you'll cause an error.
 Here's one way to do it; there are others:
 
-.. raw:: html
+.. code-block:: go
 
    <pre class="prettyprint lang-go">
    cols, err := rows.Columns()
@@ -46,7 +46,7 @@ Here's one way to do it; there are others:
 If you don't know the columns or their types, you should use
 ``sql.RawBytes``.
 
-.. raw:: html
+.. code-block:: go
 
    <pre class="prettyprint lang-go">
    cols, err := rows.Columns() // Remember to check err afterwards

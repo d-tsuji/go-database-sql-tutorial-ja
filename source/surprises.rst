@@ -28,7 +28,7 @@ Large uint64 Values
 Here's a surprising error. You can't pass big unsigned integers as
 parameters to statements if their high bit is set:
 
-.. raw:: html
+.. code-block:: go
 
    <pre class="prettyprint lang-go">
    _, err := db.Exec("INSERT INTO users(id) VALUES", math.MaxUint64) // Error
@@ -89,7 +89,7 @@ it can't be done at present. It might seem that you'd be able to call a
 simple procedure that returns a single result set, by executing
 something like this:
 
-.. raw:: html
+.. code-block:: go
 
    <pre class="prettyprint lang-go">
    err := db.QueryRow("CALL mydb.myprocedure").Scan(result) // Error
@@ -108,7 +108,7 @@ Multiple Statement Support
 The ``database/sql`` doesn't explicitly have multiple statement support,
 which means that the behavior of this is backend dependent:
 
-.. raw:: html
+.. code-block:: go
 
    <pre class="prettyprint lang-go">
    _, err := db.Exec("DELETE FROM tbl1; DELETE FROM tbl2") // Error/unpredictable result
@@ -127,7 +127,7 @@ transaction. In that scenario, it is perfectly possible to execute a
 query, loop over the rows, and within the loop make a query to the
 database (which will happen on a new connection):
 
-.. raw:: html
+.. code-block:: go
 
    <pre class="prettyprint lang-go">
    rows, err := db.Query("select * from tbl1") // Uses connection 1
@@ -141,7 +141,7 @@ database (which will happen on a new connection):
 But transactions are bound to just one connection, so this isn't
 possible with a transaction:
 
-.. raw:: html
+.. code-block:: go
 
    <pre class="prettyprint lang-go">
    tx, err := db.Begin()

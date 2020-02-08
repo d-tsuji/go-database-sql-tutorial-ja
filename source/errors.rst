@@ -15,7 +15,7 @@ Errors From Iterating Resultsets
 
 Consider the following code:
 
-.. raw:: html
+.. code-block:: go
 
    <pre class="prettyprint lang-go">
    for rows.Next() {
@@ -40,7 +40,7 @@ You should always explicitly close a ``sql.Rows`` if you exit the loop
 prematurely, as previously mentioned. It's auto-closed if the loop exits
 normally or through an error, but you might mistakenly do this:
 
-.. raw:: html
+.. code-block:: go
 
    <pre class="prettyprint lang-go">
    for rows.Next() {
@@ -67,7 +67,7 @@ Errors From QueryRow()
 
 Consider the following code to fetch a single row:
 
-.. raw:: html
+.. code-block:: go
 
    <pre class="prettyprint lang-go">
    var name string
@@ -93,7 +93,7 @@ Errors from the query are deferred until ``Scan()`` is called, and then
 are returned from that. The above code is better written like this
 instead:
 
-.. raw:: html
+.. code-block:: go
 
    <pre class="prettyprint lang-go">
    var name string
@@ -123,7 +123,7 @@ Identifying Specific Database Errors
 
 It can be tempting to write code like the following:
 
-.. raw:: html
+.. code-block:: go
 
    <pre class="prettyprint lang-go">
    rows, err := db.Query("SELECT someval FROM sometable")
@@ -143,7 +143,7 @@ The mechanism to do this varies between drivers, however, because this
 isn't part of ``database/sql`` itself. In the MySQL driver that this
 tutorial focuses on, you could write the following code:
 
-.. raw:: html
+.. code-block:: go
 
    <pre class="prettyprint lang-go">
    if driverErr, ok := err.(*mysql.MySQLError); ok { // Now the error number is accessible directly
@@ -167,7 +167,7 @@ there's an external package of `MySQL error numbers maintained by
 VividCortex <https://github.com/VividCortex/mysqlerr>`__. Using such a
 list, the above code is better written thus:
 
-.. raw:: html
+.. code-block:: go
 
    <pre class="prettyprint lang-go">
    if driverErr, ok := err.(*mysql.MySQLError); ok {

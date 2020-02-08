@@ -9,7 +9,7 @@ can, avoid them. If not, then you'll need to use special types from the
 There are types for nullable booleans, strings, integers, and floats.
 Here's how you use them:
 
-.. raw:: html
+.. code-block:: go
 
    <pre class="prettyprint lang-go">
    for rows.Next() {
@@ -44,7 +44,7 @@ work around that most database systems support, namely ``COALESCE()``.
 Something like the following might be something that you can use,
 without introducing a myriad of ``sql.Null*`` types.
 
-.. raw:: html
+.. code-block:: go
 
    <pre class="prettyprint lang-go">
    rows, err := db.Query(`

@@ -95,7 +95,7 @@ this.
 Caution must be exercised when working with prepared statements in
 transactions. Consider the following example:
 
-.. raw:: html
+.. code-block:: go
 
    <pre class="prettyprint lang-go">
    tx, err := db.Begin()
