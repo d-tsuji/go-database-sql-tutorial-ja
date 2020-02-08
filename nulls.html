@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>&lt;no title&gt; &#8212; Go database/sql tutorial  ドキュメント</title>
+    <title>Working with NULLs &#8212; Go database/sql tutorial  ドキュメント</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -15,6 +15,8 @@
     <script type="text/javascript" src="_static/translations.js"></script>
     <link rel="index" title="索引" href="genindex.html" />
     <link rel="search" title="検索" href="search.html" />
+    <link rel="next" title="Working with Unknown Columns" href="varcols.html" />
+    <link rel="prev" title="Handling Errors" href="errors.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -31,51 +33,58 @@
 
           <div class="body" role="main">
             
-  <p>Nullable columns are annoying and lead to a lot of ugly code. If you can, avoid
-them. If not, then you'll need to use special types from the <code class="docutils literal notranslate"><span class="pre">database/sql</span></code>
-package to handle them, or define your own.</p>
-<p>There are types for nullable booleans, strings, integers, and floats. Here's how
-you use them:</p>
+  <div class="section" id="working-with-nulls">
+<h1>Working with NULLs<a class="headerlink" href="#working-with-nulls" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p>Nullable columns are annoying and lead to a lot of ugly code. If you
+can, avoid them. If not, then you'll need to use special types from the
+<code class="docutils literal notranslate"><span class="pre">database/sql</span></code> package to handle them, or define your own.</p>
+<p>There are types for nullable booleans, strings, integers, and floats.
+Here's how you use them:</p>
 <pre class="prettyprint lang-go">
 for rows.Next() {
-	var s sql.NullString
-	err := rows.Scan(&amp;s)
-	// check err
-	if s.Valid {
-	   // use s.String
-	} else {
-	   // NULL value
-	}
+    var s sql.NullString
+    err := rows.Scan(&amp;s)
+    // check err
+    if s.Valid {
+       // use s.String
+    } else {
+       // NULL value
+    }
 }
-</pre><p>Limitations of the nullable types, and reasons to avoid nullable columns in case
-you need more convincing:</p>
-<ol class="simple">
-<li><p>There's no <code class="docutils literal notranslate"><span class="pre">sql.NullUint64</span></code> or <code class="docutils literal notranslate"><span class="pre">sql.NullYourFavoriteType</span></code>. You'd need to
-define your own for this.</p></li>
-<li><p>Nullability can be tricky, and not future-proof. If you think something won't
-be null, but you're wrong, your program will crash, perhaps rarely enough
-that you won't catch errors before you ship them.</p></li>
-<li><p>One of the nice things about Go is having a useful default zero-value for
-every variable. This isn't the way nullable things work.</p></li>
+</pre><p>Limitations of the nullable types, and reasons to avoid nullable columns
+in case you need more convincing:</p>
+<ol class="arabic simple">
+<li><p>There's no <code class="docutils literal notranslate"><span class="pre">sql.NullUint64</span></code> or <code class="docutils literal notranslate"><span class="pre">sql.NullYourFavoriteType</span></code>. You'd
+need to define your own for this.</p></li>
+<li><p>Nullability can be tricky, and not future-proof. If you think
+something won't be null, but you're wrong, your program will crash,
+perhaps rarely enough that you won't catch errors before you ship
+them.</p></li>
+<li><p>One of the nice things about Go is having a useful default zero-value
+for every variable. This isn't the way nullable things work.</p></li>
 </ol>
-<p>If you need to define your own types to handle NULLs, you can copy the design of
-<code class="docutils literal notranslate"><span class="pre">sql.NullString</span></code> to achieve that.</p>
-<p>If you can't avoid having NULL values in your database, there is another work around that most database systems support, namely <code class="docutils literal notranslate"><span class="pre">COALESCE()</span></code>. Something like the following might be something that you can use, without introducing a myriad of <code class="docutils literal notranslate"><span class="pre">sql.Null*</span></code> types.</p>
+<p>If you need to define your own types to handle NULLs, you can copy the
+design of <code class="docutils literal notranslate"><span class="pre">sql.NullString</span></code> to achieve that.</p>
+<p>If you can't avoid having NULL values in your database, there is another
+work around that most database systems support, namely <code class="docutils literal notranslate"><span class="pre">COALESCE()</span></code>.
+Something like the following might be something that you can use,
+without introducing a myriad of <code class="docutils literal notranslate"><span class="pre">sql.Null*</span></code> types.</p>
 <pre class="prettyprint lang-go">
 rows, err := db.Query(`
-	SELECT
-		name,
-		COALESCE(other_field, '') as otherField
-	WHERE id = ?
+    SELECT
+        name,
+        COALESCE(other_field, '') as otherField
+    WHERE id = ?
 `, 42)
 
 for rows.Next() {
-	err := rows.Scan(&name, &otherField)
-	// ..
-	// If `other_field` was NULL, `otherField` is now an empty string. This works with other data types as well.
+    err := rows.Scan(&name, &otherField)
+    // ..
+    // If `other_field` was NULL, `otherField` is now an empty string. This works with other data types as well.
 }
-</pre><p><strong>Previous: <a class="reference external" href="errors.html">Handling Errors</a></strong>
-<strong>Next: <a class="reference external" href="varcols.html">Working with Unknown Columns</a></strong></p>
+</pre><p><strong>Previous: `Handling Errors &lt;errors.html&gt;`__</strong> <strong>Next: `Working with
+Unknown Columns &lt;varcols.html&gt;`__</strong></p>
+</div>
 
 
           </div>
@@ -83,41 +92,36 @@ for rows.Next() {
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  </ul></li>
+        <div class="sphinxsidebarwrapper"><div id="toc" class="sidebarRow">
+    <h5>GO DATABASE/SQL TUTORIAL</h5>
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="importing.html">Importing a Database Driver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="accessing.html">Accessing the Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="retrieving.html">Retrieving Result Sets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifying.html">Modifying Data and Using Transactions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prepared.html">Using Prepared Statements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">Handling Errors</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Working with NULLs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="varcols.html">Working with Unknown Columns</a></li>
+<li class="toctree-l1"><a class="reference internal" href="connection-pool.html">The Connection Pool</a></li>
+<li class="toctree-l1"><a class="reference internal" href="surprises.html">Surprises, Antipatterns and Limitations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Related Reading and Resources</a></li>
 </ul>
+
+    
 </div>
-  <div role="note" aria-label="source link">
-    <h3>このページ</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/nulls.md.txt"
-            rel="nofollow">ソースコードを表示</a></li>
-    </ul>
-   </div><div>
-    <h4>Page Info</h4>
-    <p>
-        <ul>
-            <li>英数記号: 1754</li>
-            <li>非アスキー: 0</li>
-            <li>合計文字数: 1754</li>
-            <li>半角換算: 1754</li>
-            <li>全角換算: 877.0</li>
-        </ul>
-    </p>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">クイック検索</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="検索" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+
+<style type="text/css">
+    .toctree-l1 {
+        font-size: 12px;
+        margin-bottom: 0;
+        font-stretch: normal;
+        font-style: normal;
+        line-height: 1.33;
+        padding-bottom: 5px;
+        margin: 2px;
+    }
         </div>
       </div>
       <div class="clearer"></div>
@@ -130,7 +134,7 @@ for rows.Next() {
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
-      <a href="_sources/nulls.md.txt"
+      <a href="_sources/nulls.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 

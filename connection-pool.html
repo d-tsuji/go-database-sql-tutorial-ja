@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>&lt;no title&gt; &#8212; Go database/sql tutorial  ドキュメント</title>
+    <title>The Connection Pool &#8212; Go database/sql tutorial  ドキュメント</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -15,6 +15,8 @@
     <script type="text/javascript" src="_static/translations.js"></script>
     <link rel="index" title="索引" href="genindex.html" />
     <link rel="search" title="検索" href="search.html" />
+    <link rel="next" title="Surprises, Antipatterns and Limitations" href="surprises.html" />
+    <link rel="prev" title="Working with Unknown Columns" href="varcols.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -31,21 +33,49 @@
 
           <div class="body" role="main">
             
-  <p>There is a basic connection pool in the <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> package. There isn't a
-lot of ability to control or inspect it, but here are some things you might find
-useful to know:</p>
+  <div class="section" id="the-connection-pool">
+<h1>The Connection Pool<a class="headerlink" href="#the-connection-pool" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p>There is a basic connection pool in the <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> package. There
+isn't a lot of ability to control or inspect it, but here are some
+things you might find useful to know:</p>
 <ul class="simple">
-<li><p>Connection pooling means that executing two consecutive statements on a single database might open two connections and execute them separately. It is fairly common for programmers to be confused as to why their code misbehaves. For example, <code class="docutils literal notranslate"><span class="pre">LOCK</span> <span class="pre">TABLES</span></code> followed by an <code class="docutils literal notranslate"><span class="pre">INSERT</span></code> can block because the <code class="docutils literal notranslate"><span class="pre">INSERT</span></code> is on a connection that does not hold the table lock.</p></li>
-<li><p>Connections are created when needed and there isn't a free connection in the pool.</p></li>
-<li><p>By default, there's no limit on the number of connections. If you try to do a lot of things at once, you can create an arbitrary number of connections. This can cause the database to return an error such as &quot;too many connections.&quot;</p></li>
-<li><p>In Go 1.1 or newer, you can use <code class="docutils literal notranslate"><span class="pre">db.SetMaxIdleConns(N)</span></code> to limit the number of <em>idle</em> connections in the pool. This doesn't limit the pool size, though.</p></li>
-<li><p>In Go 1.2.1 or newer, you can use <code class="docutils literal notranslate"><span class="pre">db.SetMaxOpenConns(N)</span></code> to limit the number of <em>total</em> open connections to the database. Unfortunately, a <a class="reference external" href="https://groups.google.com/d/msg/golang-dev/jOTqHxI09ns/x79ajll-ab4J">deadlock bug</a> (<a class="reference external" href="https://code.google.com/p/go/source/detail?r=8a7ac002f840">fix</a>) prevents <code class="docutils literal notranslate"><span class="pre">db.SetMaxOpenConns(N)</span></code> from safely being used in 1.2.</p></li>
-<li><p>Connections are recycled rather fast. Setting a high number of idle connections with <code class="docutils literal notranslate"><span class="pre">db.SetMaxIdleConns(N)</span></code> can reduce this churn, and help keep connections around for reuse.</p></li>
-<li><p>Keeping a connection idle for a long time can cause problems (like in <a class="reference external" href="https://github.com/go-sql-driver/mysql/issues/257">this issue</a> with MySQL on Microsoft Azure). Try <code class="docutils literal notranslate"><span class="pre">db.SetMaxIdleConns(0)</span></code> if you get connection timeouts because a connection is idle for too long.</p></li>
-<li><p>You can also specify the maximum amount of time a connection may be reused by setting <code class="docutils literal notranslate"><span class="pre">db.SetConnMaxLifetime(duration)</span></code> since reusing long lived connections may cause network issues. This closes the unused connections lazily i.e. closing expired connection may be deferred.</p></li>
+<li><p>Connection pooling means that executing two consecutive statements on
+a single database might open two connections and execute them
+separately. It is fairly common for programmers to be confused as to
+why their code misbehaves. For example, <code class="docutils literal notranslate"><span class="pre">LOCK</span> <span class="pre">TABLES</span></code> followed by
+an <code class="docutils literal notranslate"><span class="pre">INSERT</span></code> can block because the <code class="docutils literal notranslate"><span class="pre">INSERT</span></code> is on a connection
+that does not hold the table lock.</p></li>
+<li><p>Connections are created when needed and there isn't a free connection
+in the pool.</p></li>
+<li><p>By default, there's no limit on the number of connections. If you try
+to do a lot of things at once, you can create an arbitrary number of
+connections. This can cause the database to return an error such as
+&quot;too many connections.&quot;</p></li>
+<li><p>In Go 1.1 or newer, you can use <code class="docutils literal notranslate"><span class="pre">db.SetMaxIdleConns(N)</span></code> to limit
+the number of <em>idle</em> connections in the pool. This doesn't limit the
+pool size, though.</p></li>
+<li><p>In Go 1.2.1 or newer, you can use <code class="docutils literal notranslate"><span class="pre">db.SetMaxOpenConns(N)</span></code> to limit
+the number of <em>total</em> open connections to the database.
+Unfortunately, a <a class="reference external" href="https://groups.google.com/d/msg/golang-dev/jOTqHxI09ns/x79ajll-ab4J">deadlock
+bug</a>
+(<a class="reference external" href="https://code.google.com/p/go/source/detail?r=8a7ac002f840">fix</a>)
+prevents <code class="docutils literal notranslate"><span class="pre">db.SetMaxOpenConns(N)</span></code> from safely being used in 1.2.</p></li>
+<li><p>Connections are recycled rather fast. Setting a high number of idle
+connections with <code class="docutils literal notranslate"><span class="pre">db.SetMaxIdleConns(N)</span></code> can reduce this churn, and
+help keep connections around for reuse.</p></li>
+<li><p>Keeping a connection idle for a long time can cause problems (like in
+<a class="reference external" href="https://github.com/go-sql-driver/mysql/issues/257">this issue</a>
+with MySQL on Microsoft Azure). Try <code class="docutils literal notranslate"><span class="pre">db.SetMaxIdleConns(0)</span></code> if you
+get connection timeouts because a connection is idle for too long.</p></li>
+<li><p>You can also specify the maximum amount of time a connection may be
+reused by setting <code class="docutils literal notranslate"><span class="pre">db.SetConnMaxLifetime(duration)</span></code> since reusing
+long lived connections may cause network issues. This closes the
+unused connections lazily i.e. closing expired connection may be
+deferred.</p></li>
 </ul>
-<p><strong>Previous: <a class="reference external" href="varcols.html">Working with Unknown Columns</a></strong>
-<strong>Next: <a class="reference external" href="surprises.html">Surprises, Antipatterns and Limitations</a></strong></p>
+<p><strong>Previous: `Working with Unknown Columns &lt;varcols.html&gt;`__</strong> <strong>Next:
+`Surprises, Antipatterns and Limitations &lt;surprises.html&gt;`__</strong></p>
+</div>
 
 
           </div>
@@ -53,41 +83,36 @@ useful to know:</p>
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  </ul></li>
+        <div class="sphinxsidebarwrapper"><div id="toc" class="sidebarRow">
+    <h5>GO DATABASE/SQL TUTORIAL</h5>
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="importing.html">Importing a Database Driver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="accessing.html">Accessing the Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="retrieving.html">Retrieving Result Sets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifying.html">Modifying Data and Using Transactions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prepared.html">Using Prepared Statements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">Handling Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nulls.html">Working with NULLs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="varcols.html">Working with Unknown Columns</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">The Connection Pool</a></li>
+<li class="toctree-l1"><a class="reference internal" href="surprises.html">Surprises, Antipatterns and Limitations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Related Reading and Resources</a></li>
 </ul>
+
+    
 </div>
-  <div role="note" aria-label="source link">
-    <h3>このページ</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/connection-pool.md.txt"
-            rel="nofollow">ソースコードを表示</a></li>
-    </ul>
-   </div><div>
-    <h4>Page Info</h4>
-    <p>
-        <ul>
-            <li>英数記号: 1945</li>
-            <li>非アスキー: 0</li>
-            <li>合計文字数: 1945</li>
-            <li>半角換算: 1945</li>
-            <li>全角換算: 972.5</li>
-        </ul>
-    </p>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">クイック検索</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="検索" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+
+<style type="text/css">
+    .toctree-l1 {
+        font-size: 12px;
+        margin-bottom: 0;
+        font-stretch: normal;
+        font-style: normal;
+        line-height: 1.33;
+        padding-bottom: 5px;
+        margin: 2px;
+    }
         </div>
       </div>
       <div class="clearer"></div>
@@ -100,7 +125,7 @@ useful to know:</p>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
-      <a href="_sources/connection-pool.md.txt"
+      <a href="_sources/connection-pool.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 

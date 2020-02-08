@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>Resource Exhaustion &#8212; Go database/sql tutorial  ドキュメント</title>
+    <title>Surprises, Antipatterns and Limitations &#8212; Go database/sql tutorial  ドキュメント</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -15,6 +15,8 @@
     <script type="text/javascript" src="_static/translations.js"></script>
     <link rel="index" title="索引" href="genindex.html" />
     <link rel="search" title="検索" href="search.html" />
+    <link rel="next" title="Related Reading and Resources" href="references.html" />
+    <link rel="prev" title="The Connection Pool" href="connection-pool.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -31,119 +33,132 @@
 
           <div class="body" role="main">
             
-  <p>Although <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> is simple once you're accustomed to it, you might be
-surprised by the subtlety of use cases it supports. This is common to Go's core
-libraries.</p>
+  <div class="section" id="surprises-antipatterns-and-limitations">
+<h1>Surprises, Antipatterns and Limitations<a class="headerlink" href="#surprises-antipatterns-and-limitations" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p>Although <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> is simple once you're accustomed to it, you
+might be surprised by the subtlety of use cases it supports. This is
+common to Go's core libraries.</p>
 <div class="section" id="resource-exhaustion">
-<h1>Resource Exhaustion<a class="headerlink" href="#resource-exhaustion" title="このヘッドラインへのパーマリンク">¶</a></h1>
-<p>As mentioned throughout this site, if you don't use <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> as intended,
-you can certainly cause trouble for yourself, usually by consuming some
-resources or preventing them from being reused effectively:</p>
+<h2>Resource Exhaustion<a class="headerlink" href="#resource-exhaustion" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>As mentioned throughout this site, if you don't use <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> as
+intended, you can certainly cause trouble for yourself, usually by
+consuming some resources or preventing them from being reused
+effectively:</p>
 <ul class="simple">
 <li><p>Opening and closing databases can cause exhaustion of resources.</p></li>
-<li><p>Failing to read all rows or use <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> reserves connections from the pool.</p></li>
-<li><p>Using <code class="docutils literal notranslate"><span class="pre">Query()</span></code> for a statement that doesn't return rows will reserve a connection from the pool.</p></li>
-<li><p>Failing to be aware of how <a class="reference external" href="prepared.html">prepared statements</a> work can lead to a lot of extra database activity.</p></li>
+<li><p>Failing to read all rows or use <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> reserves connections
+from the pool.</p></li>
+<li><p>Using <code class="docutils literal notranslate"><span class="pre">Query()</span></code> for a statement that doesn't return rows will
+reserve a connection from the pool.</p></li>
+<li><p>Failing to be aware of how <a class="reference external" href="prepared.html">prepared statements</a>
+work can lead to a lot of extra database activity.</p></li>
 </ul>
 </div>
 <div class="section" id="large-uint64-values">
-<h1>Large uint64 Values<a class="headerlink" href="#large-uint64-values" title="このヘッドラインへのパーマリンク">¶</a></h1>
-<p>Here's a surprising error. You can't pass big unsigned integers as parameters to
-statements if their high bit is set:</p>
+<h2>Large uint64 Values<a class="headerlink" href="#large-uint64-values" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>Here's a surprising error. You can't pass big unsigned integers as
+parameters to statements if their high bit is set:</p>
 <pre class="prettyprint lang-go">
 _, err := db.Exec("INSERT INTO users(id) VALUES", math.MaxUint64) // Error
-</pre><p>This will throw an error. Be careful if you use <code class="docutils literal notranslate"><span class="pre">uint64</span></code> values, as they may
-start out small and work without error, but increment over time and start
-throwing errors.</p>
+</pre><p>This will throw an error. Be careful if you use <code class="docutils literal notranslate"><span class="pre">uint64</span></code> values, as
+they may start out small and work without error, but increment over time
+and start throwing errors.</p>
 </div>
 <div class="section" id="connection-state-mismatch">
-<h1>Connection State Mismatch<a class="headerlink" href="#connection-state-mismatch" title="このヘッドラインへのパーマリンク">¶</a></h1>
-<p>Some things can change connection state, and that can cause problems for two
-reasons:</p>
-<ol class="simple">
-<li><p>Some connection state, such as whether you're in a transaction, should be
-handled through the Go types instead.</p></li>
-<li><p>You might be assuming that your queries run on a single connection when they
-don't.</p></li>
+<h2>Connection State Mismatch<a class="headerlink" href="#connection-state-mismatch" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>Some things can change connection state, and that can cause problems for
+two reasons:</p>
+<ol class="arabic simple">
+<li><p>Some connection state, such as whether you're in a transaction,
+should be handled through the Go types instead.</p></li>
+<li><p>You might be assuming that your queries run on a single connection
+when they don't.</p></li>
 </ol>
-<p>For example, setting the current database with a <code class="docutils literal notranslate"><span class="pre">USE</span></code> statement is a typical
-thing for many people to do. But in Go, it will affect only the connection that
-you run it in. Unless you are in a transaction, other statements that you think
-are executed on that connection may actually run on different connections gotten
-from the pool, so they won't see the effects of such changes.</p>
-<p>Additionally, after you've changed the connection, it'll return to the pool and
-potentially pollute the state for some other code. This is one of the reasons
-why you should never issue BEGIN or COMMIT statements as SQL commands directly,
-too.</p>
+<p>For example, setting the current database with a <code class="docutils literal notranslate"><span class="pre">USE</span></code> statement is a
+typical thing for many people to do. But in Go, it will affect only the
+connection that you run it in. Unless you are in a transaction, other
+statements that you think are executed on that connection may actually
+run on different connections gotten from the pool, so they won't see the
+effects of such changes.</p>
+<p>Additionally, after you've changed the connection, it'll return to the
+pool and potentially pollute the state for some other code. This is one
+of the reasons why you should never issue BEGIN or COMMIT statements as
+SQL commands directly, too.</p>
 </div>
 <div class="section" id="database-specific-syntax">
-<h1>Database-Specific Syntax<a class="headerlink" href="#database-specific-syntax" title="このヘッドラインへのパーマリンク">¶</a></h1>
-<p>The <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> API provides an abstraction of a row-oriented database, but
-specific databases and drivers can differ in behavior and/or syntax, such as
-<a class="reference external" href="prepared.html">prepared statement placeholders</a>.</p>
+<h2>Database-Specific Syntax<a class="headerlink" href="#database-specific-syntax" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> API provides an abstraction of a row-oriented
+database, but specific databases and drivers can differ in behavior
+and/or syntax, such as <a class="reference external" href="prepared.html">prepared statement
+placeholders</a>.</p>
 </div>
 <div class="section" id="multiple-result-sets">
-<h1>Multiple Result Sets<a class="headerlink" href="#multiple-result-sets" title="このヘッドラインへのパーマリンク">¶</a></h1>
-<p>The Go driver doesn't support multiple result sets from a single query in any
-way, and there doesn't seem to be any plan to do that, although there is <a class="reference external" href="https://github.com/golang/go/issues/5171">a
-feature request</a> for
-supporting bulk operations such as bulk copy.</p>
-<p>This means, among other things, that a stored procedure that returns multiple
-result sets will not work correctly.</p>
+<h2>Multiple Result Sets<a class="headerlink" href="#multiple-result-sets" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>The Go driver doesn't support multiple result sets from a single query
+in any way, and there doesn't seem to be any plan to do that, although
+there is <a class="reference external" href="https://github.com/golang/go/issues/5171">a feature
+request</a> for supporting
+bulk operations such as bulk copy.</p>
+<p>This means, among other things, that a stored procedure that returns
+multiple result sets will not work correctly.</p>
 </div>
 <div class="section" id="invoking-stored-procedures">
-<h1>Invoking Stored Procedures<a class="headerlink" href="#invoking-stored-procedures" title="このヘッドラインへのパーマリンク">¶</a></h1>
-<p>Invoking stored procedures is driver-specific, but in the MySQL driver it can't
-be done at present. It might seem that you'd be able to call a simple
-procedure that returns a single result set, by executing something like this:</p>
+<h2>Invoking Stored Procedures<a class="headerlink" href="#invoking-stored-procedures" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>Invoking stored procedures is driver-specific, but in the MySQL driver
+it can't be done at present. It might seem that you'd be able to call a
+simple procedure that returns a single result set, by executing
+something like this:</p>
 <pre class="prettyprint lang-go">
 err := db.QueryRow("CALL mydb.myprocedure").Scan(&amp;result) // Error
-</pre><p>In fact, this won't work. You'll get the following error: <em>Error
-1312: PROCEDURE mydb.myprocedure can't return a result set in the given
+</pre><p>In fact, this won't work. You'll get the following error: <em>Error 1312:
+PROCEDURE mydb.myprocedure can't return a result set in the given
 context</em>. This is because MySQL expects the connection to be set into
-multi-statement mode, even for a single result, and the driver doesn't currently
-do that (though see <a class="reference external" href="https://github.com/go-sql-driver/mysql/issues/66">this
+multi-statement mode, even for a single result, and the driver doesn't
+currently do that (though see <a class="reference external" href="https://github.com/go-sql-driver/mysql/issues/66">this
 issue</a>).</p>
 </div>
 <div class="section" id="multiple-statement-support">
-<h1>Multiple Statement Support<a class="headerlink" href="#multiple-statement-support" title="このヘッドラインへのパーマリンク">¶</a></h1>
-<p>The <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> doesn't explicitly have multiple statement support, which means
-that the behavior of this is backend dependent:</p>
+<h2>Multiple Statement Support<a class="headerlink" href="#multiple-statement-support" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> doesn't explicitly have multiple statement support,
+which means that the behavior of this is backend dependent:</p>
 <pre class="prettyprint lang-go">
 _, err := db.Exec("DELETE FROM tbl1; DELETE FROM tbl2") // Error/unpredictable result
-</pre><p>The server is allowed to interpret this however it wants, which can include
-returning an error, executing only the first statement, or executing both.</p>
-<p>Similarly, there is no way to batch statements in a transaction. Each statement
-in a transaction must be executed serially, and the resources in the results,
-such as a Row or Rows, must be scanned or closed so the underlying connection is free
-for the next statement to use. This differs from the usual behavior when you're
-not working with a transaction. In that scenario, it is perfectly possible to
-execute a query, loop over the rows, and within the loop make a query to the
+</pre><p>The server is allowed to interpret this however it wants, which can
+include returning an error, executing only the first statement, or
+executing both.</p>
+<p>Similarly, there is no way to batch statements in a transaction. Each
+statement in a transaction must be executed serially, and the resources
+in the results, such as a Row or Rows, must be scanned or closed so the
+underlying connection is free for the next statement to use. This
+differs from the usual behavior when you're not working with a
+transaction. In that scenario, it is perfectly possible to execute a
+query, loop over the rows, and within the loop make a query to the
 database (which will happen on a new connection):</p>
 <pre class="prettyprint lang-go">
 rows, err := db.Query("select * from tbl1") // Uses connection 1
 for rows.Next() {
-	err = rows.Scan(&myvariable)
-	// The following line will NOT use connection 1, which is already in-use
-	db.Query("select * from tbl2 where id = ?", myvariable)
+    err = rows.Scan(&myvariable)
+    // The following line will NOT use connection 1, which is already in-use
+    db.Query("select * from tbl2 where id = ?", myvariable)
 }
-</pre><p>But transactions are bound to
-just one connection, so this isn't possible with a transaction:</p>
+</pre><p>But transactions are bound to just one connection, so this isn't
+possible with a transaction:</p>
 <pre class="prettyprint lang-go">
 tx, err := db.Begin()
 rows, err := tx.Query("select * from tbl1") // Uses tx's connection
 for rows.Next() {
-	err = rows.Scan(&myvariable)
-	// ERROR! tx's connection is already busy!
-	tx.Query("select * from tbl2 where id = ?", myvariable)
+    err = rows.Scan(&myvariable)
+    // ERROR! tx's connection is already busy!
+    tx.Query("select * from tbl2 where id = ?", myvariable)
 }
-</pre><p>Go doesn't stop you from trying, though. For that reason, you may wind up with a
-corrupted connection if you attempt to perform another statement before the
-first has released its resources and cleaned up after itself.  This also means
-that each statement in a transaction results in a separate set of network
-round-trips to the database.</p>
-<p><strong>Previous: <a class="reference external" href="connection-pool.html">The Connection Pool</a></strong>
-<strong>Next: <a class="reference external" href="references.html">Related Reading and Resources</a></strong></p>
+</pre><p>Go doesn't stop you from trying, though. For that reason, you may wind
+up with a corrupted connection if you attempt to perform another
+statement before the first has released its resources and cleaned up
+after itself. This also means that each statement in a transaction
+results in a separate set of network round-trips to the database.</p>
+<p><strong>Previous: `The Connection Pool &lt;connection-pool.html&gt;`__</strong> <strong>Next:
+`Related Reading and Resources &lt;references.html&gt;`__</strong></p>
+</div>
 </div>
 
 
@@ -152,52 +167,36 @@ round-trips to the database.</p>
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">目次</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Resource Exhaustion</a></li>
-<li><a class="reference internal" href="#large-uint64-values">Large uint64 Values</a></li>
-<li><a class="reference internal" href="#connection-state-mismatch">Connection State Mismatch</a></li>
-<li><a class="reference internal" href="#database-specific-syntax">Database-Specific Syntax</a></li>
-<li><a class="reference internal" href="#multiple-result-sets">Multiple Result Sets</a></li>
-<li><a class="reference internal" href="#invoking-stored-procedures">Invoking Stored Procedures</a></li>
-<li><a class="reference internal" href="#multiple-statement-support">Multiple Statement Support</a></li>
+        <div class="sphinxsidebarwrapper"><div id="toc" class="sidebarRow">
+    <h5>GO DATABASE/SQL TUTORIAL</h5>
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="importing.html">Importing a Database Driver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="accessing.html">Accessing the Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="retrieving.html">Retrieving Result Sets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifying.html">Modifying Data and Using Transactions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prepared.html">Using Prepared Statements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">Handling Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nulls.html">Working with NULLs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="varcols.html">Working with Unknown Columns</a></li>
+<li class="toctree-l1"><a class="reference internal" href="connection-pool.html">The Connection Pool</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Surprises, Antipatterns and Limitations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Related Reading and Resources</a></li>
 </ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  </ul></li>
-</ul>
+
+    
 </div>
-  <div role="note" aria-label="source link">
-    <h3>このページ</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/surprises.md.txt"
-            rel="nofollow">ソースコードを表示</a></li>
-    </ul>
-   </div><div>
-    <h4>Page Info</h4>
-    <p>
-        <ul>
-            <li>英数記号: 5334</li>
-            <li>非アスキー: 0</li>
-            <li>合計文字数: 5334</li>
-            <li>半角換算: 5334</li>
-            <li>全角換算: 2667.0</li>
-        </ul>
-    </p>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">クイック検索</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="検索" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+
+<style type="text/css">
+    .toctree-l1 {
+        font-size: 12px;
+        margin-bottom: 0;
+        font-stretch: normal;
+        font-style: normal;
+        line-height: 1.33;
+        padding-bottom: 5px;
+        margin: 2px;
+    }
         </div>
       </div>
       <div class="clearer"></div>
@@ -210,7 +209,7 @@ round-trips to the database.</p>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
-      <a href="_sources/surprises.md.txt"
+      <a href="_sources/surprises.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 

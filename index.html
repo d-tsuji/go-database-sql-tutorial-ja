@@ -15,6 +15,7 @@
     <script type="text/javascript" src="_static/translations.js"></script>
     <link rel="index" title="索引" href="genindex.html" />
     <link rel="search" title="検索" href="search.html" />
+    <link rel="next" title="Overview" href="overview.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -34,6 +35,10 @@
   <div class="section" id="go-database-sql-tutorial">
 <h1>Go database/sql tutorial<a class="headerlink" href="#go-database-sql-tutorial" title="このヘッドラインへのパーマリンク">¶</a></h1>
 <p>この文書は <a class="reference external" href="https://github.com/VividCortex">VividCortex 社</a> によって作成された <a class="reference external" href="http://go-database-sql.org/index.html">Go database/sql tutorial</a> の日本語訳となります。</p>
+<hr class="docutils" />
+<p>GoでSQLやSQL-likeなデータベースを使うよく知られた方法は <a class="reference external" href="http://golang.org/pkg/database/sql/">database/sql</a> パッケージを使うことです。 <a class="reference external" href="http://golang.org/pkg/database/sql/">database/sql</a> パッケージは行志向データベースへの軽量なインターフェースを提供します。このWebサイトは、パッケージの最も一的な使い方としてのリファレンスです。</p>
+<p>なぜこのサイトが必要なのでしょうか？それはパッケージドキュメントはすべての機能を教えてくれますが、パッケージをどのように使うか、ということは教えてくれません。私達は、できることの一覧ではなく、クイックリファレンス や &quot;getting started&quot; としてお伝えしたいと考えています。コントリビューションは大歓迎です。<a class="reference external" href="https://github.com/VividCortex/go-database-sql-tutorial">こちら</a> にプルリクエストを送ってください。</p>
+<p>次に進みます: <a class="reference external" href="overview.html">Overview of Go's database/sql Package</a></p>
 <div class="toctree-wrapper compound">
 </div>
 </div>
@@ -44,41 +49,36 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="#">Documentation overview</a><ul>
-  </ul></li>
+        <div class="sphinxsidebarwrapper"><div id="toc" class="sidebarRow">
+    <h5>GO DATABASE/SQL TUTORIAL</h5>
+    <ul>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="importing.html">Importing a Database Driver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="accessing.html">Accessing the Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="retrieving.html">Retrieving Result Sets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifying.html">Modifying Data and Using Transactions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prepared.html">Using Prepared Statements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">Handling Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nulls.html">Working with NULLs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="varcols.html">Working with Unknown Columns</a></li>
+<li class="toctree-l1"><a class="reference internal" href="connection-pool.html">The Connection Pool</a></li>
+<li class="toctree-l1"><a class="reference internal" href="surprises.html">Surprises, Antipatterns and Limitations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Related Reading and Resources</a></li>
 </ul>
+
+    
 </div>
-  <div role="note" aria-label="source link">
-    <h3>このページ</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/index.rst.txt"
-            rel="nofollow">ソースコードを表示</a></li>
-    </ul>
-   </div><div>
-    <h4>Page Info</h4>
-    <p>
-        <ul>
-            <li>英数記号: 64</li>
-            <li>非アスキー: 26</li>
-            <li>合計文字数: 90</li>
-            <li>半角換算: 116</li>
-            <li>全角換算: 58.0</li>
-        </ul>
-    </p>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">クイック検索</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="検索" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+
+<style type="text/css">
+    .toctree-l1 {
+        font-size: 12px;
+        margin-bottom: 0;
+        font-stretch: normal;
+        font-style: normal;
+        line-height: 1.33;
+        padding-bottom: 5px;
+        margin: 2px;
+    }
         </div>
       </div>
       <div class="clearer"></div>

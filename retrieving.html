@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>Fetching Data from the Database &#8212; Go database/sql tutorial  ドキュメント</title>
+    <title>Retrieving Result Sets &#8212; Go database/sql tutorial  ドキュメント</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -15,6 +15,8 @@
     <script type="text/javascript" src="_static/translations.js"></script>
     <link rel="index" title="索引" href="genindex.html" />
     <link rel="search" title="検索" href="search.html" />
+    <link rel="next" title="Modifying Data and Using Transactions" href="modifying.html" />
+    <link rel="prev" title="Accessing the Database" href="accessing.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -31,161 +33,179 @@
 
           <div class="body" role="main">
             
-  <p>There are several idiomatic operations to retrieve results from the datastore.</p>
-<ol class="simple">
+  <div class="section" id="retrieving-result-sets">
+<h1>Retrieving Result Sets<a class="headerlink" href="#retrieving-result-sets" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p>There are several idiomatic operations to retrieve results from the
+datastore.</p>
+<ol class="arabic simple">
 <li><p>Execute a query that returns rows.</p></li>
-<li><p>Prepare a statement for repeated use, execute it multiple times, and destroy it.</p></li>
-<li><p>Execute a statement in a once-off fashion, without preparing it for repeated use.</p></li>
-<li><p>Execute a query that returns a single row. There is a shortcut for this special case.</p></li>
+<li><p>Prepare a statement for repeated use, execute it multiple times, and
+destroy it.</p></li>
+<li><p>Execute a statement in a once-off fashion, without preparing it for
+repeated use.</p></li>
+<li><p>Execute a query that returns a single row. There is a shortcut for
+this special case.</p></li>
 </ol>
-<p>Go's <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> function names are significant. <strong>If a function name
-includes <code class="docutils literal notranslate"><span class="pre">Query</span></code>, it is designed to ask a question of the database, and will
-return a set of rows</strong>, even if it's empty. Statements that don't return rows
-should not use <code class="docutils literal notranslate"><span class="pre">Query</span></code> functions; they should use <code class="docutils literal notranslate"><span class="pre">Exec()</span></code>.</p>
+<p>Go's <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> function names are significant. <strong>If a function
+name includes ``Query``, it is designed to ask a question of the
+database, and will return a set of rows</strong>, even if it's empty.
+Statements that don't return rows should not use <code class="docutils literal notranslate"><span class="pre">Query</span></code> functions;
+they should use <code class="docutils literal notranslate"><span class="pre">Exec()</span></code>.</p>
 <div class="section" id="fetching-data-from-the-database">
-<h1>Fetching Data from the Database<a class="headerlink" href="#fetching-data-from-the-database" title="このヘッドラインへのパーマリンク">¶</a></h1>
-<p>Let's take a look at an example of how to query the database, working with
-results. We'll query the <code class="docutils literal notranslate"><span class="pre">users</span></code> table for a user whose <code class="docutils literal notranslate"><span class="pre">id</span></code> is 1, and print out
-the user's <code class="docutils literal notranslate"><span class="pre">id</span></code> and <code class="docutils literal notranslate"><span class="pre">name</span></code>.  We will assign results to variables, a row at a
-time, with <code class="docutils literal notranslate"><span class="pre">rows.Scan()</span></code>.</p>
+<h2>Fetching Data from the Database<a class="headerlink" href="#fetching-data-from-the-database" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>Let's take a look at an example of how to query the database, working
+with results. We'll query the <code class="docutils literal notranslate"><span class="pre">users</span></code> table for a user whose <code class="docutils literal notranslate"><span class="pre">id</span></code> is
+1, and print out the user's <code class="docutils literal notranslate"><span class="pre">id</span></code> and <code class="docutils literal notranslate"><span class="pre">name</span></code>. We will assign results
+to variables, a row at a time, with <code class="docutils literal notranslate"><span class="pre">rows.Scan()</span></code>.</p>
 <pre class="prettyprint lang-go">
 var (
-	id int
-	name string
+    id int
+    name string
 )
 rows, err := db.Query("select id, name from users where id = ?", 1)
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 defer rows.Close()
 for rows.Next() {
-	err := rows.Scan(&amp;id, &amp;name)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println(id, name)
+    err := rows.Scan(&amp;id, &amp;name)
+    if err != nil {
+        log.Fatal(err)
+    }
+    log.Println(id, name)
 }
 err = rows.Err()
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 </pre><p>Here's what's happening in the above code:</p>
-<ol class="simple">
-<li><p>We're using <code class="docutils literal notranslate"><span class="pre">db.Query()</span></code> to send the query to the database. We check the error, as usual.</p></li>
+<ol class="arabic simple">
+<li><p>We're using <code class="docutils literal notranslate"><span class="pre">db.Query()</span></code> to send the query to the database. We
+check the error, as usual.</p></li>
 <li><p>We defer <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code>. This is very important.</p></li>
 <li><p>We iterate over the rows with <code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code>.</p></li>
 <li><p>We read the columns in each row into variables with <code class="docutils literal notranslate"><span class="pre">rows.Scan()</span></code>.</p></li>
 <li><p>We check for errors after we're done iterating over the rows.</p></li>
 </ol>
-<p>This is pretty much the only way to do it in Go. You can't
-get a row as a map, for example. That's because everything is strongly typed.
-You need to create variables of the correct type and pass pointers to them, as
-shown.</p>
-<p>A couple parts of this are easy to get wrong, and can have bad consequences.</p>
+<p>This is pretty much the only way to do it in Go. You can't get a row as
+a map, for example. That's because everything is strongly typed. You
+need to create variables of the correct type and pass pointers to them,
+as shown.</p>
+<p>A couple parts of this are easy to get wrong, and can have bad
+consequences.</p>
 <ul class="simple">
-<li><p>You should always check for an error at the end of the <code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">rows.Next()</span></code>
-loop. If there's an error during the loop, you need to know about it. Don't
-just assume that the loop iterates until you've processed all the rows.</p></li>
-<li><p>Second, as long as there's an open result set (represented by <code class="docutils literal notranslate"><span class="pre">rows</span></code>), the
-underlying connection is busy and can't be used for any other query. That
-means it's not available in the connection pool. If you iterate over all of
-the rows with <code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code>, eventually you'll read the last row, and
-<code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code> will encounter an internal EOF error and call <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> for
-you. But if for some reason you exit that loop -- an early return, or so on --
-then the <code class="docutils literal notranslate"><span class="pre">rows</span></code> doesn't get closed, and the connection remains open. (It is
-auto-closed if <code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code> returns false due to an error, though). This is
-an easy way to run out of resources.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> is a harmless no-op if it's already closed, so you can call
-it multiple times. Notice, however, that we check the error first, and only
-call <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> if there isn't an error, in order to avoid a runtime panic.</p></li>
-<li><p>You should <strong>always <code class="docutils literal notranslate"><span class="pre">defer</span> <span class="pre">rows.Close()</span></code></strong>, even if you also call <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code>
-explicitly at the end of the loop, which isn't a bad idea.</p></li>
-<li><p>Don't <code class="docutils literal notranslate"><span class="pre">defer</span></code> within a loop. A deferred statement doesn't get executed until
-the function exits, so a long-running function shouldn't use it. If you do,
-you will slowly accumulate memory. If you are repeatedly querying and
-consuming result sets within a loop, you should explicitly call <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code>
-when you're done with each result, and not use <code class="docutils literal notranslate"><span class="pre">defer</span></code>.</p></li>
+<li><p>You should always check for an error at the end of the
+<code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">rows.Next()</span></code> loop. If there's an error during the loop, you
+need to know about it. Don't just assume that the loop iterates until
+you've processed all the rows.</p></li>
+<li><p>Second, as long as there's an open result set (represented by
+<code class="docutils literal notranslate"><span class="pre">rows</span></code>), the underlying connection is busy and can't be used for
+any other query. That means it's not available in the connection
+pool. If you iterate over all of the rows with <code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code>,
+eventually you'll read the last row, and <code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code> will
+encounter an internal EOF error and call <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> for you.
+But if for some reason you exit that loop -- an early return, or so
+on -- then the <code class="docutils literal notranslate"><span class="pre">rows</span></code> doesn't get closed, and the connection
+remains open. (It is auto-closed if <code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code> returns false due
+to an error, though). This is an easy way to run out of resources.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> is a harmless no-op if it's already closed, so you
+can call it multiple times. Notice, however, that we check the error
+first, and only call <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> if there isn't an error, in
+order to avoid a runtime panic.</p></li>
+<li><p>You should <strong>always ``defer rows.Close()``</strong>, even if you also call
+<code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> explicitly at the end of the loop, which isn't a bad
+idea.</p></li>
+<li><p>Don't <code class="docutils literal notranslate"><span class="pre">defer</span></code> within a loop. A deferred statement doesn't get
+executed until the function exits, so a long-running function
+shouldn't use it. If you do, you will slowly accumulate memory. If
+you are repeatedly querying and consuming result sets within a loop,
+you should explicitly call <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> when you're done with
+each result, and not use <code class="docutils literal notranslate"><span class="pre">defer</span></code>.</p></li>
 </ul>
 </div>
 <div class="section" id="how-scan-works">
-<h1>How Scan() Works<a class="headerlink" href="#how-scan-works" title="このヘッドラインへのパーマリンク">¶</a></h1>
-<p>When you iterate over rows and scan them into destination variables, Go performs data
-type conversions work for you, behind the scenes. It is based on the type of the
-destination variable. Being aware of this can clean up your code and help avoid
-repetitive work.</p>
-<p>For example, suppose you select some rows from a table that is defined with
-string columns, such as <code class="docutils literal notranslate"><span class="pre">VARCHAR(45)</span></code> or similar. You happen to know, however,
-that the table always contains numbers. If you pass a pointer to a string, Go
-will copy the bytes into the string. Now you can use <code class="docutils literal notranslate"><span class="pre">strconv.ParseInt()</span></code> or
-similar to convert the value to a number. You'll have to check for errors in the
-SQL operations, as well as errors parsing the integer. This is messy and
-tedious.</p>
-<p>Or, you can just pass <code class="docutils literal notranslate"><span class="pre">Scan()</span></code> a pointer to an integer. Go will detect that and
-call <code class="docutils literal notranslate"><span class="pre">strconv.ParseInt()</span></code> for you. If there's an error in conversion, the call
-to <code class="docutils literal notranslate"><span class="pre">Scan()</span></code> will return it. Your code is neater and smaller now. This is the
-recommended way to use <code class="docutils literal notranslate"><span class="pre">database/sql</span></code>.</p>
+<h2>How Scan() Works<a class="headerlink" href="#how-scan-works" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>When you iterate over rows and scan them into destination variables, Go
+performs data type conversions work for you, behind the scenes. It is
+based on the type of the destination variable. Being aware of this can
+clean up your code and help avoid repetitive work.</p>
+<p>For example, suppose you select some rows from a table that is defined
+with string columns, such as <code class="docutils literal notranslate"><span class="pre">VARCHAR(45)</span></code> or similar. You happen to
+know, however, that the table always contains numbers. If you pass a
+pointer to a string, Go will copy the bytes into the string. Now you can
+use <code class="docutils literal notranslate"><span class="pre">strconv.ParseInt()</span></code> or similar to convert the value to a number.
+You'll have to check for errors in the SQL operations, as well as errors
+parsing the integer. This is messy and tedious.</p>
+<p>Or, you can just pass <code class="docutils literal notranslate"><span class="pre">Scan()</span></code> a pointer to an integer. Go will detect
+that and call <code class="docutils literal notranslate"><span class="pre">strconv.ParseInt()</span></code> for you. If there's an error in
+conversion, the call to <code class="docutils literal notranslate"><span class="pre">Scan()</span></code> will return it. Your code is neater
+and smaller now. This is the recommended way to use <code class="docutils literal notranslate"><span class="pre">database/sql</span></code>.</p>
 </div>
 <div class="section" id="preparing-queries">
-<h1>Preparing Queries<a class="headerlink" href="#preparing-queries" title="このヘッドラインへのパーマリンク">¶</a></h1>
-<p>You should, in general, always prepare queries to be used multiple times. The
-result of preparing the query is a prepared statement, which can have
-placeholders (a.k.a. bind values) for parameters that you'll provide when you
-execute the statement.  This is much better than concatenating strings, for all
-the usual reasons (avoiding SQL injection attacks, for example).</p>
-<p>In MySQL, the parameter placeholder is <code class="docutils literal notranslate"><span class="pre">?</span></code>, and in PostgreSQL it is <code class="docutils literal notranslate"><span class="pre">$N</span></code>, where
-N is a number. SQLite accepts either of these.  In Oracle placeholders begin with
-a colon and are named, like <code class="docutils literal notranslate"><span class="pre">:param1</span></code>. We'll use <code class="docutils literal notranslate"><span class="pre">?</span></code> because we're using MySQL
-as our example.</p>
+<h2>Preparing Queries<a class="headerlink" href="#preparing-queries" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>You should, in general, always prepare queries to be used multiple
+times. The result of preparing the query is a prepared statement, which
+can have placeholders (a.k.a. bind values) for parameters that you'll
+provide when you execute the statement. This is much better than
+concatenating strings, for all the usual reasons (avoiding SQL injection
+attacks, for example).</p>
+<p>In MySQL, the parameter placeholder is <code class="docutils literal notranslate"><span class="pre">?</span></code>, and in PostgreSQL it is
+<code class="docutils literal notranslate"><span class="pre">$N</span></code>, where N is a number. SQLite accepts either of these. In Oracle
+placeholders begin with a colon and are named, like <code class="docutils literal notranslate"><span class="pre">:param1</span></code>. We'll
+use <code class="docutils literal notranslate"><span class="pre">?</span></code> because we're using MySQL as our example.</p>
 <pre class="prettyprint lang-go">
 stmt, err := db.Prepare("select id, name from users where id = ?")
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 defer stmt.Close()
 rows, err := stmt.Query(1)
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 defer rows.Close()
 for rows.Next() {
-	// ...
+    // ...
 }
 if err = rows.Err(); err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
-</pre><p>Under the hood, <code class="docutils literal notranslate"><span class="pre">db.Query()</span></code> actually prepares, executes, and closes a prepared
-statement. That's three round-trips to the database. If you're not careful, you
-can triple the number of database interactions your application makes! Some
-drivers can avoid this in specific cases,
-but not all drivers do. See <a class="reference external" href="prepared.html">prepared statements</a> for more.</p>
+</pre><p>Under the hood, <code class="docutils literal notranslate"><span class="pre">db.Query()</span></code> actually prepares, executes, and closes a
+prepared statement. That's three round-trips to the database. If you're
+not careful, you can triple the number of database interactions your
+application makes! Some drivers can avoid this in specific cases, but
+not all drivers do. See <a class="reference external" href="prepared.html">prepared statements</a> for
+more.</p>
 </div>
 <div class="section" id="single-row-queries">
-<h1>Single-Row Queries<a class="headerlink" href="#single-row-queries" title="このヘッドラインへのパーマリンク">¶</a></h1>
-<p>If a query returns at most one row, you can use a shortcut around some of the
-lengthy boilerplate code:</p>
+<h2>Single-Row Queries<a class="headerlink" href="#single-row-queries" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>If a query returns at most one row, you can use a shortcut around some
+of the lengthy boilerplate code:</p>
 <pre class="prettyprint lang-go">
 var name string
 err = db.QueryRow("select name from users where id = ?", 1).Scan(&amp;name)
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 fmt.Println(name)
-</pre><p>Errors from the query are deferred until <code class="docutils literal notranslate"><span class="pre">Scan()</span></code> is called, and then are
-returned from that. You can also call <code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> on a prepared statement:</p>
+</pre><p>Errors from the query are deferred until <code class="docutils literal notranslate"><span class="pre">Scan()</span></code> is called, and then
+are returned from that. You can also call <code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> on a prepared
+statement:</p>
 <pre class="prettyprint lang-go">
 stmt, err := db.Prepare("select name from users where id = ?")
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 defer stmt.Close()
 var name string
 err = stmt.QueryRow(1).Scan(&amp;name)
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 fmt.Println(name)
-</pre><p><strong>Previous: <a class="reference external" href="accessing.html">Accessing the Database</a></strong>
-<strong>Next: <a class="reference external" href="modifying.html">Modifying Data and Using Transactions</a></strong></p>
+</pre><p><strong>Previous: `Accessing the Database &lt;accessing.html&gt;`__</strong> <strong>Next:
+`Modifying Data and Using Transactions &lt;modifying.html&gt;`__</strong></p>
+</div>
 </div>
 
 
@@ -194,49 +214,36 @@ fmt.Println(name)
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">目次</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Fetching Data from the Database</a></li>
-<li><a class="reference internal" href="#how-scan-works">How Scan() Works</a></li>
-<li><a class="reference internal" href="#preparing-queries">Preparing Queries</a></li>
-<li><a class="reference internal" href="#single-row-queries">Single-Row Queries</a></li>
+        <div class="sphinxsidebarwrapper"><div id="toc" class="sidebarRow">
+    <h5>GO DATABASE/SQL TUTORIAL</h5>
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="importing.html">Importing a Database Driver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="accessing.html">Accessing the Database</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Retrieving Result Sets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifying.html">Modifying Data and Using Transactions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prepared.html">Using Prepared Statements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">Handling Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nulls.html">Working with NULLs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="varcols.html">Working with Unknown Columns</a></li>
+<li class="toctree-l1"><a class="reference internal" href="connection-pool.html">The Connection Pool</a></li>
+<li class="toctree-l1"><a class="reference internal" href="surprises.html">Surprises, Antipatterns and Limitations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Related Reading and Resources</a></li>
 </ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  </ul></li>
-</ul>
+
+    
 </div>
-  <div role="note" aria-label="source link">
-    <h3>このページ</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/retrieving.md.txt"
-            rel="nofollow">ソースコードを表示</a></li>
-    </ul>
-   </div><div>
-    <h4>Page Info</h4>
-    <p>
-        <ul>
-            <li>英数記号: 6557</li>
-            <li>非アスキー: 0</li>
-            <li>合計文字数: 6557</li>
-            <li>半角換算: 6557</li>
-            <li>全角換算: 3278.5</li>
-        </ul>
-    </p>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">クイック検索</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="検索" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+
+<style type="text/css">
+    .toctree-l1 {
+        font-size: 12px;
+        margin-bottom: 0;
+        font-stretch: normal;
+        font-style: normal;
+        line-height: 1.33;
+        padding-bottom: 5px;
+        margin: 2px;
+    }
         </div>
       </div>
       <div class="clearer"></div>
@@ -249,7 +256,7 @@ fmt.Println(name)
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
-      <a href="_sources/retrieving.md.txt"
+      <a href="_sources/retrieving.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 

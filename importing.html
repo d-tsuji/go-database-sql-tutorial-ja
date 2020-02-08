@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>&lt;no title&gt; &#8212; Go database/sql tutorial  ドキュメント</title>
+    <title>Importing a Database Driver &#8212; Go database/sql tutorial  ドキュメント</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -15,6 +15,8 @@
     <script type="text/javascript" src="_static/translations.js"></script>
     <link rel="index" title="索引" href="genindex.html" />
     <link rel="search" title="検索" href="search.html" />
+    <link rel="next" title="Accessing the Database" href="accessing.html" />
+    <link rel="prev" title="Overview" href="overview.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -31,31 +33,25 @@
 
           <div class="body" role="main">
             
-  <p>To use <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> you'll need the package itself, as well as a driver for
-the specific database you want to use.</p>
-<p>You generally shouldn't use driver packages directly, although some drivers
-encourage you to do so. (In our opinion, it's usually a bad idea.) Instead, your
-code should only refer to types defined in <code class="docutils literal notranslate"><span class="pre">database/sql</span></code>, if possible. This
-helps avoid making your code dependent on the driver, so that you can change the
-underlying driver (and thus the database you're accessing) with minimal code
-changes. It also forces you to use the Go idioms instead of ad-hoc idioms that a
-particular driver author may have provided.</p>
-<p>In this documentation, we'll use the excellent <a class="reference external" href="https://github.com/go-sql-driver/mysql">MySQL
-drivers</a> from &#64;julienschmidt and &#64;arnehormann
-for examples.</p>
-<p>Add the following to the top of your Go source file:</p>
-<pre class="prettyprint lang-go">
-import (
-	"database/sql"
-	_ "github.com/go-sql-driver/mysql"
-)
-</pre><p>Notice that we're loading the driver anonymously, aliasing its package qualifier
-to <code class="docutils literal notranslate"><span class="pre">_</span></code> so none of its exported names are visible to our code. Under the hood,
-the driver registers itself as being available to the <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> package,
-but in general nothing else happens with the exception that the init function is run.</p>
-<p>Now you're ready to access a database.</p>
-<p><strong>Previous: <a class="reference external" href="overview.html">Overview of Go's database/sql Package</a></strong>
-<strong>Next: <a class="reference external" href="accessing.html">Accessing the Database</a></strong></p>
+  <div class="section" id="importing-a-database-driver">
+<h1>Importing a Database Driver<a class="headerlink" href="#importing-a-database-driver" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">database/sql</span></code> を使用するにはパッケージそのもののインポートと、使いたい特定のデータベースのドライバーをインポートする必要があります。</p>
+<p>通常はドライバーのパッケージを直接使用しないでください。ただし一部のドライバーは直接使用することを推奨しています。(私たちの意見では、通常良くない方法です。)可能であれば <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> で定義された型のみで実装すべきです。これは実装のドライバー依存を防ぎ、基盤となるドライバーやデータベースを変更するときに、最小限のコードの変更でできるようにします。また提供されている特定のドライバーのアドホックな書き方をする代わりに、Goの慣例的な書き方をすることができます。</p>
+<p>このドキュメントでは例として &#64;julienschmidt と &#64;arnehormann から提供されている、すばらしい <a class="reference external" href="https://github.com/go-sql-driver/mysql">MySQLdrivers</a> を用います。</p>
+<p>Goの先頭のコードに以下を追加します。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="p">(</span>
+    <span class="s">&quot;database/sql&quot;</span>
+    <span class="nx">_</span> <span class="s">&quot;github.com/go-sql-driver/mysql&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>ドライバーを無名で読み込んでいることに注意してください。パッケージ修飾子として <code class="docutils literal notranslate"><span class="pre">_</span></code> を用いているため、パッケージで公開されている関数をコード内で使うことはありません。内部ではドライバーは <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> パッケージで使用できるように登録しますが、一般に実行時のinit関数を除いて何も影響を及ぼしません。</p>
+<p>さぁ、データベースにアクセスする準備が整いました。</p>
+<div class="line-block">
+<div class="line">前に戻る: <a class="reference external" href="overview.html">Overview of Go's database/sql Package</a></div>
+<div class="line">次に進む: <a class="reference external" href="accessing.html">Accessing the Database</a></div>
+</div>
+</div>
 
 
           </div>
@@ -63,41 +59,36 @@ but in general nothing else happens with the exception that the init function is
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  </ul></li>
+        <div class="sphinxsidebarwrapper"><div id="toc" class="sidebarRow">
+    <h5>GO DATABASE/SQL TUTORIAL</h5>
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Importing a Database Driver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="accessing.html">Accessing the Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="retrieving.html">Retrieving Result Sets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifying.html">Modifying Data and Using Transactions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prepared.html">Using Prepared Statements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">Handling Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nulls.html">Working with NULLs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="varcols.html">Working with Unknown Columns</a></li>
+<li class="toctree-l1"><a class="reference internal" href="connection-pool.html">The Connection Pool</a></li>
+<li class="toctree-l1"><a class="reference internal" href="surprises.html">Surprises, Antipatterns and Limitations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Related Reading and Resources</a></li>
 </ul>
+
+    
 </div>
-  <div role="note" aria-label="source link">
-    <h3>このページ</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/importing.md.txt"
-            rel="nofollow">ソースコードを表示</a></li>
-    </ul>
-   </div><div>
-    <h4>Page Info</h4>
-    <p>
-        <ul>
-            <li>英数記号: 1326</li>
-            <li>非アスキー: 0</li>
-            <li>合計文字数: 1326</li>
-            <li>半角換算: 1326</li>
-            <li>全角換算: 663.0</li>
-        </ul>
-    </p>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">クイック検索</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="検索" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+
+<style type="text/css">
+    .toctree-l1 {
+        font-size: 12px;
+        margin-bottom: 0;
+        font-stretch: normal;
+        font-style: normal;
+        line-height: 1.33;
+        padding-bottom: 5px;
+        margin: 2px;
+    }
         </div>
       </div>
       <div class="clearer"></div>
@@ -110,7 +101,7 @@ but in general nothing else happens with the exception that the init function is
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
-      <a href="_sources/importing.md.txt"
+      <a href="_sources/importing.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 

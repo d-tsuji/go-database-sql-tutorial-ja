@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>&lt;no title&gt; &#8212; Go database/sql tutorial  ドキュメント</title>
+    <title>Accessing the Database &#8212; Go database/sql tutorial  ドキュメント</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -15,6 +15,8 @@
     <script type="text/javascript" src="_static/translations.js"></script>
     <link rel="index" title="索引" href="genindex.html" />
     <link rel="search" title="検索" href="search.html" />
+    <link rel="next" title="Retrieving Result Sets" href="retrieving.html" />
+    <link rel="prev" title="Importing a Database Driver" href="importing.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -31,54 +33,41 @@
 
           <div class="body" role="main">
             
-  <p>Now that you've loaded the driver package, you're ready to create a database
-object, a <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code>.</p>
-<p>To create a <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code>, you use <code class="docutils literal notranslate"><span class="pre">sql.Open()</span></code>. This returns a <code class="docutils literal notranslate"><span class="pre">*sql.DB</span></code>:</p>
-<pre class="prettyprint lang-go">
-func main() {
-	db, err := sql.Open("mysql",
-		"user:password@tcp(127.0.0.1:3306)/hello")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-}
-</pre><p>In the example shown, we're illustrating several things:</p>
-<ol class="simple">
-<li><p>The first argument to <code class="docutils literal notranslate"><span class="pre">sql.Open</span></code> is the driver name. This is the string that the driver used to register itself with <code class="docutils literal notranslate"><span class="pre">database/sql</span></code>, and is conventionally the same as the package name to avoid confusion. For example, it's <code class="docutils literal notranslate"><span class="pre">mysql</span></code> for <a class="reference external" href="https://github.com/go-sql-driver/mysql">github.com/go-sql-driver/mysql</a>. Some drivers do not follow the convention and use the database name, e.g. <code class="docutils literal notranslate"><span class="pre">sqlite3</span></code> for <a class="reference external" href="https://github.com/mattn/go-sqlite3">github.com/mattn/go-sqlite3</a> and <code class="docutils literal notranslate"><span class="pre">postgres</span></code> for <a class="reference external" href="https://github.com/lib/pq">github.com/lib/pq</a>.</p></li>
-<li><p>The second argument is a driver-specific syntax that tells the driver how to access the underlying datastore. In this example, we're connecting to the &quot;hello&quot; database inside a local MySQL server instance.</p></li>
-<li><p>You should (almost) always check and handle errors returned from all <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> operations.  There are a few special cases that we'll discuss later where it doesn't make sense to do this.</p></li>
-<li><p>It is idiomatic to <code class="docutils literal notranslate"><span class="pre">defer</span> <span class="pre">db.Close()</span></code> if the <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> should not have a lifetime beyond the scope of the function.</p></li>
+  <div class="section" id="accessing-the-database">
+<h1>Accessing the Database<a class="headerlink" href="#accessing-the-database" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p>ドライバーパッケージを読み込んだので、 <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> のデータベースオブジェクトを作成する準備が整いました。</p>
+<p><code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> を作成するためには <code class="docutils literal notranslate"><span class="pre">sql.Open()</span></code> を使います。これは <code class="docutils literal notranslate"><span class="pre">*sql.DB</span></code> を返します。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kd">func</span> <span class="nx">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">db</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">sql</span><span class="p">.</span><span class="nx">Open</span><span class="p">(</span><span class="s">&quot;mysql&quot;</span><span class="p">,</span> <span class="s">&quot;user:password@tcp(127.0.0.1:3306)/hello&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+        <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="k">defer</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>例では、いくつかの内容を示しています。</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">sql.Open</span></code> への最初の引数はドライバー名です。<code class="docutils literal notranslate"><span class="pre">database/sql</span></code> にドライバーを登録するときに使われる文字列で、混乱を避けるために通常はパッケージ名と同じ名前が用いられます。例えば <code class="docutils literal notranslate"><span class="pre">mysql</span></code> は <a class="reference external" href="https://github.com/go-sql-driver/mysql">github.com/go-sql-driver/mysql</a> のドライバーというようにです。いくつかのドライバーは慣例に従っていないため、データベース名を用います。例えば <code class="docutils literal notranslate"><span class="pre">sqlite3</span></code> は <a class="reference external" href="https://github.com/mattn/go-sqlite3">github.com/mattn/go-sqlite3</a> として、 <code class="docutils literal notranslate"><span class="pre">postgres</span></code> は <a class="reference external" href="https://github.com/lib/pq">github.com/lib/pq</a> として使われます。</p></li>
+<li><p>2番目の引数はデータベースへアクセスするためにドライバーに示すドライバー固有の構文の文字列です。上記の例ではローカルのMySQLインスタンスの &quot;hello&quot; データベースに接続しています。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">database/sql</span></code> への操作から返ってきたエラーはほぼ常に確認し、適切にハンドリングすべきです。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> が関数のスコープを超えて生存するべきではない場合、 <code class="docutils literal notranslate"><span class="pre">defer</span> <span class="pre">db.Close()</span></code> とするのが Go らしいです。</p></li>
 </ol>
-<p>Perhaps counter-intuitively, <code class="docutils literal notranslate"><span class="pre">sql.Open()</span></code> <strong>does not establish any connections
-to the database</strong>, nor does it validate driver connection parameters. Instead,
-it simply prepares the database abstraction for later use. The first actual
-connection to the underlying datastore will be established lazily, when it's
-needed for the first time. If you want to check right away that the database is
-available and accessible (for example, check that you can establish a network
-connection and log in), use <code class="docutils literal notranslate"><span class="pre">db.Ping()</span></code> to do that, and remember to check for
-errors:</p>
-<pre class="prettyprint lang-go">
-err = db.Ping()
-if err != nil {
-	// do something here
-}
-</pre><p>Although it's idiomatic to <code class="docutils literal notranslate"><span class="pre">Close()</span></code> the database when you're finished with it,
-<strong>the <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> object is designed to be long-lived.</strong> Don't <code class="docutils literal notranslate"><span class="pre">Open()</span></code> and
-<code class="docutils literal notranslate"><span class="pre">Close()</span></code> databases frequently. Instead, create <strong>one</strong> <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> object for each
-distinct datastore you need to access, and keep it until the program is done
-accessing that datastore. Pass it around as needed, or make it available somehow
-globally, but keep it open. And don't <code class="docutils literal notranslate"><span class="pre">Open()</span></code> and <code class="docutils literal notranslate"><span class="pre">Close()</span></code> from a short-lived
-function. Instead, pass the <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> into that short-lived function as an
-argument.</p>
-<p>If you don't treat the <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> as a long-lived object, you could experience
-problems such as poor reuse and sharing of connections, running out of available
-network resources, or sporadic failures due to a lot of TCP connections
-remaining in <code class="docutils literal notranslate"><span class="pre">TIME_WAIT</span></code> status. Such problems are signs that you're not using
-<code class="docutils literal notranslate"><span class="pre">database/sql</span></code> as it was designed.</p>
-<p>Now it's time to use your <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> object.</p>
-<p><strong>Previous: <a class="reference external" href="importing.html">Importing a Database Driver</a></strong>
-<strong>Next: <a class="reference external" href="retrieving.html">Retrieving Result Sets</a></strong></p>
+<p>おそらく直感に反して、 <code class="docutils literal notranslate"><span class="pre">sql.Open()</span></code> は <strong>データベースへのコネクションは確立しません</strong> 。またドライバーの接続パラメータを検証しません。代わりに、後で接続するためにデータベースへの抽象化を準備するだけです。データベースへの実際のコネクションは、必要になった最初のときに遅延して、確立します。データベースがアクセス可能であることをすぐに確認する場合(たとえばネットワーク接続を確立してログインする場合)、 <code class="docutils literal notranslate"><span class="pre">db.Ping()</span></code> を用います。エラーを確認することを忘れないでください。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">err</span> <span class="p">=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Ping</span><span class="p">()</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+    <span class="c1">// do something here</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>データベースの使用が終わったら、 <code class="docutils literal notranslate"><span class="pre">Close()</span></code> することが慣用的ですが、 ** sql.DB オブジェクトは長期間生存するように設計されています** 。データベースに対して頻繁に <code class="docutils literal notranslate"><span class="pre">Open()</span></code> や <code class="docutils literal notranslate"><span class="pre">Close()</span></code> しないでください。代わりにアクセスする必要があるデータストア1つにつき、 <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> を <strong>1つ</strong> 生成してください。そして、プログラムがデータストアへのアクセスが完了するまでオブジェクトを保持してください。必要に応じてデータベースオブジェクトを渡したり、何らかの形でグローバルに利用可能にしておきます。データベースアクセスする関数から <code class="docutils literal notranslate"><span class="pre">Open()</span></code> や <code class="docutils literal notranslate"><span class="pre">Close()</span></code> としないでください。代わりに <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> を引数として関数に渡してください。</p>
+<p><code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> を長時間生存するオブジェクトとして扱わないと、コネクションの再利用や共有の不足、利用可能なネットワークリソースの不足、 多くのTCPコネクションが <code class="docutils literal notranslate"><span class="pre">TIME_WAIT</span></code> ステータスとして残存することによる、まれな障害を引き起こします。このような問題は意図した設計ではないような <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> の使い方をしていることを示しています。</p>
+<p>さぁ、<code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> オブジェクトを使いましょう。</p>
+<div class="line-block">
+<div class="line">前に戻る: <a class="reference external" href="importing.html">Importing a Database Driver</a></div>
+<div class="line">次に進む: <a class="reference external" href="retrieving.html">Retrieving Result Sets</a></div>
+</div>
+</div>
 
 
           </div>
@@ -86,41 +75,36 @@ remaining in <code class="docutils literal notranslate"><span class="pre">TIME_W
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  </ul></li>
+        <div class="sphinxsidebarwrapper"><div id="toc" class="sidebarRow">
+    <h5>GO DATABASE/SQL TUTORIAL</h5>
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="importing.html">Importing a Database Driver</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Accessing the Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="retrieving.html">Retrieving Result Sets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifying.html">Modifying Data and Using Transactions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prepared.html">Using Prepared Statements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">Handling Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nulls.html">Working with NULLs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="varcols.html">Working with Unknown Columns</a></li>
+<li class="toctree-l1"><a class="reference internal" href="connection-pool.html">The Connection Pool</a></li>
+<li class="toctree-l1"><a class="reference internal" href="surprises.html">Surprises, Antipatterns and Limitations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Related Reading and Resources</a></li>
 </ul>
+
+    
 </div>
-  <div role="note" aria-label="source link">
-    <h3>このページ</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/accessing.md.txt"
-            rel="nofollow">ソースコードを表示</a></li>
-    </ul>
-   </div><div>
-    <h4>Page Info</h4>
-    <p>
-        <ul>
-            <li>英数記号: 2928</li>
-            <li>非アスキー: 0</li>
-            <li>合計文字数: 2928</li>
-            <li>半角換算: 2928</li>
-            <li>全角換算: 1464.0</li>
-        </ul>
-    </p>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">クイック検索</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="検索" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+
+<style type="text/css">
+    .toctree-l1 {
+        font-size: 12px;
+        margin-bottom: 0;
+        font-stretch: normal;
+        font-style: normal;
+        line-height: 1.33;
+        padding-bottom: 5px;
+        margin: 2px;
+    }
         </div>
       </div>
       <div class="clearer"></div>
@@ -133,7 +117,7 @@ remaining in <code class="docutils literal notranslate"><span class="pre">TIME_W
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
-      <a href="_sources/accessing.md.txt"
+      <a href="_sources/accessing.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 
