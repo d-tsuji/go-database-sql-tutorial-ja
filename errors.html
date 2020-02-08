@@ -35,6 +35,7 @@
             
   <div class="section" id="handling-errors">
 <h1>Handling Errors<a class="headerlink" href="#handling-errors" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<hr class="docutils" />
 <p>Almost all operations with <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> types return an error as the
 last value. You should always check these errors, never ignore them.</p>
 <p>There are a few places where error behavior is special-case, or there's
@@ -84,7 +85,7 @@ just ignore the error.</p>
 <p>Consider the following code to fetch a single row:</p>
 <pre class="prettyprint lang-go">
 var name string
-err = db.QueryRow("select name from users where id = ?", 1).Scan(&amp;name)
+err = db.QueryRow("select name from users where id = ?", 1).Scan(name)
 if err != nil {
     log.Fatal(err)
 }
@@ -103,7 +104,7 @@ are returned from that. The above code is better written like this
 instead:</p>
 <pre class="prettyprint lang-go">
 var name string
-err = db.QueryRow("select name from users where id = ?", 1).Scan(&amp;name)
+err = db.QueryRow("select name from users where id = ?", 1).Scan(name)
 if err != nil {
     if err == sql.ErrNoRows {
         // there were no rows, but otherwise no error occurred

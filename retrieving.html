@@ -35,65 +35,52 @@
             
   <div class="section" id="retrieving-result-sets">
 <h1>Retrieving Result Sets<a class="headerlink" href="#retrieving-result-sets" title="このヘッドラインへのパーマリンク">¶</a></h1>
-<p>There are several idiomatic operations to retrieve results from the
-datastore.</p>
+<hr class="docutils" />
+<p>データストアから結果を取得する慣用的な方法がいくつかあります。</p>
 <ol class="arabic simple">
-<li><p>Execute a query that returns rows.</p></li>
-<li><p>Prepare a statement for repeated use, execute it multiple times, and
-destroy it.</p></li>
-<li><p>Execute a statement in a once-off fashion, without preparing it for
-repeated use.</p></li>
-<li><p>Execute a query that returns a single row. There is a shortcut for
-this special case.</p></li>
+<li><p>行を返すクエリを発行します。</p></li>
+<li><p>繰り返し用いるステートメントを準備し、複数回の実行と破棄をします。</p></li>
+<li><p>繰り返し使用するための準備をせずに、一度だけのステートメントを実行します。</p></li>
+<li><p>単一の行を返すクエリを発行します。この場合はショートカットがあります。</p></li>
 </ol>
-<p>Go's <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> function names are significant. <strong>If a function
-name includes ``Query``, it is designed to ask a question of the
-database, and will return a set of rows</strong>, even if it's empty.
-Statements that don't return rows should not use <code class="docutils literal notranslate"><span class="pre">Query</span></code> functions;
-they should use <code class="docutils literal notranslate"><span class="pre">Exec()</span></code>.</p>
-<div class="section" id="fetching-data-from-the-database">
-<h2>Fetching Data from the Database<a class="headerlink" href="#fetching-data-from-the-database" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>Let's take a look at an example of how to query the database, working
-with results. We'll query the <code class="docutils literal notranslate"><span class="pre">users</span></code> table for a user whose <code class="docutils literal notranslate"><span class="pre">id</span></code> is
-1, and print out the user's <code class="docutils literal notranslate"><span class="pre">id</span></code> and <code class="docutils literal notranslate"><span class="pre">name</span></code>. We will assign results
-to variables, a row at a time, with <code class="docutils literal notranslate"><span class="pre">rows.Scan()</span></code>.</p>
-<pre class="prettyprint lang-go">
-var (
-    id int
-    name string
-)
-rows, err := db.Query("select id, name from users where id = ?", 1)
-if err != nil {
-    log.Fatal(err)
-}
-defer rows.Close()
-for rows.Next() {
-    err := rows.Scan(&amp;id, &amp;name)
-    if err != nil {
-        log.Fatal(err)
-    }
-    log.Println(id, name)
-}
-err = rows.Err()
-if err != nil {
-    log.Fatal(err)
-}
-</pre><p>Here's what's happening in the above code:</p>
+<p>Goの <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> の関数名は重要です。関数名に <code class="docutils literal notranslate"><span class="pre">Query</span></code> という文字を含んでいれば、データベースにクエリを発行し、空行も可能な行の集合を返すために設計されているとわかります。行を返さないステートメントの場合、 <code class="docutils literal notranslate"><span class="pre">Query</span></code> 関数名を使うべきではなく、 <code class="docutils literal notranslate"><span class="pre">Exec()</span></code> を用いるべきです。</p>
+<div class="section" id="id1">
+<h2>データベースからのデータの取得<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>データベースにクエリを発行して、結果を取得する方法の例を見てみましょう。<code class="docutils literal notranslate"><span class="pre">user</span></code> テーブルから <code class="docutils literal notranslate"><span class="pre">id</span></code> が1であるユーザを取得し、<code class="docutils literal notranslate"><span class="pre">id</span></code> と <code class="docutils literal notranslate"><span class="pre">name</span></code> を表示します。<code class="docutils literal notranslate"><span class="pre">rows.Scan()</span></code> を使用して1度に1行ずつ、変数に結果を割り当てます。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kd">var</span> <span class="p">(</span>
+    <span class="nx">id</span> <span class="kt">int</span>
+    <span class="nx">name</span> <span class="kt">string</span>
+<span class="p">)</span>
+<span class="nx">rows</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">&quot;select id, name from users where id = ?&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+    <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="k">defer</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span>
+<span class="k">for</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Next</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">err</span> <span class="o">:=</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Scan</span><span class="p">(</span><span class="nx">id</span><span class="p">,</span> <span class="nx">name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+        <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="nx">log</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">id</span><span class="p">,</span> <span class="nx">name</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="nx">err</span> <span class="p">=</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Err</span><span class="p">()</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+    <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>上記のコードで行われていることは次のとおりです。</p>
 <ol class="arabic simple">
-<li><p>We're using <code class="docutils literal notranslate"><span class="pre">db.Query()</span></code> to send the query to the database. We
-check the error, as usual.</p></li>
-<li><p>We defer <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code>. This is very important.</p></li>
-<li><p>We iterate over the rows with <code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code>.</p></li>
-<li><p>We read the columns in each row into variables with <code class="docutils literal notranslate"><span class="pre">rows.Scan()</span></code>.</p></li>
-<li><p>We check for errors after we're done iterating over the rows.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">db.Query()</span></code> を用いてデータベースにクエリを発行します。そしてエラーをチェックします。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">defer</span> <span class="pre">rows.Close()</span></code> とします。これはとても重要です。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code> を用いて行を繰り返し処理します。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rows.Scan()</span></code> を用いて、それぞれの行のカラムを結果を変数に読み込みます。</p></li>
+<li><p>行の反復処理が完了したら、エラーをチェックします。</p></li>
 </ol>
-<p>This is pretty much the only way to do it in Go. You can't get a row as
-a map, for example. That's because everything is strongly typed. You
-need to create variables of the correct type and pass pointers to them,
-as shown.</p>
-<p>A couple parts of this are easy to get wrong, and can have bad
-consequences.</p>
+<p>これはGoで行う唯一の方法です。たとえば行をmapとして取得することはできません。なぜならすべてが強く型付けされているためです。次に示すように、適切な型の変数を宣言し、ポインタとして渡す必要があります。</p>
+<p>上記の処理は間違えやすく、悪い結果になる可能性があります。</p>
 <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">rows.Next()</span></code> のループの最後に必ずエラーをチェックする必要があります。ループ中にエラーが発生した場合、エラーについて知る必要があります。すべての行を処理するまで、ループが繰り返されるわけではありません。</p></li>
 <li><p>You should always check for an error at the end of the
 <code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">rows.Next()</span></code> loop. If there's an error during the loop, you
 need to know about it. Don't just assume that the loop iterates until
@@ -177,34 +164,35 @@ application makes! Some drivers can avoid this in specific cases, but
 not all drivers do. See <a class="reference external" href="prepared.html">prepared statements</a> for
 more.</p>
 </div>
-<div class="section" id="single-row-queries">
-<h2>Single-Row Queries<a class="headerlink" href="#single-row-queries" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>If a query returns at most one row, you can use a shortcut around some
-of the lengthy boilerplate code:</p>
-<pre class="prettyprint lang-go">
-var name string
-err = db.QueryRow("select name from users where id = ?", 1).Scan(&amp;name)
-if err != nil {
-    log.Fatal(err)
-}
-fmt.Println(name)
-</pre><p>Errors from the query are deferred until <code class="docutils literal notranslate"><span class="pre">Scan()</span></code> is called, and then
-are returned from that. You can also call <code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> on a prepared
-statement:</p>
-<pre class="prettyprint lang-go">
-stmt, err := db.Prepare("select name from users where id = ?")
-if err != nil {
-    log.Fatal(err)
-}
-defer stmt.Close()
-var name string
-err = stmt.QueryRow(1).Scan(&amp;name)
-if err != nil {
-    log.Fatal(err)
-}
-fmt.Println(name)
-</pre><p><strong>Previous: `Accessing the Database &lt;accessing.html&gt;`__</strong> <strong>Next:
-`Modifying Data and Using Transactions &lt;modifying.html&gt;`__</strong></p>
+<div class="section" id="id2">
+<h2>単一の行のクエリ<a class="headerlink" href="#id2" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>クエリが高々1行しか返さない場合、長々とした定型的なコードの代わりにショートカットを使うことができます。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kd">var</span> <span class="nx">name</span> <span class="kt">string</span>
+<span class="nx">err</span> <span class="p">=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">QueryRow</span><span class="p">(</span><span class="s">&quot;select name from users where id = ?&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">).</span><span class="nx">Scan</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+    <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>クエリからのエラーは <code class="docutils literal notranslate"><span class="pre">Scan()</span></code> が呼ばれるまで遅延され、呼び出されると返ってきます。プリペアステートメントとして <code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> を呼ぶこともできます。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">stmt</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Prepare</span><span class="p">(</span><span class="s">&quot;select name from users where id = ?&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+    <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="k">defer</span> <span class="nx">stmt</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span>
+<span class="kd">var</span> <span class="nx">name</span> <span class="kt">string</span>
+<span class="nx">err</span> <span class="p">=</span> <span class="nx">stmt</span><span class="p">.</span><span class="nx">QueryRow</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="nx">Scan</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+    <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line">前に戻る: <a class="reference external" href="accessing.html">Accessing the Database</a></div>
+<div class="line">次に進む:<a class="reference external" href="modifying.html">Modifying Data and Using Transactions</a></div>
+</div>
 </div>
 </div>
 

@@ -2,6 +2,8 @@
 Handling Errors
 ==================================
 
+----------------------------------
+
 Almost all operations with ``database/sql`` types return an error as the
 last value. You should always check these errors, never ignore them.
 
@@ -69,7 +71,7 @@ Consider the following code to fetch a single row:
 
    <pre class="prettyprint lang-go">
    var name string
-   err = db.QueryRow("select name from users where id = ?", 1).Scan(&amp;name)
+   err = db.QueryRow("select name from users where id = ?", 1).Scan(name)
    if err != nil {
        log.Fatal(err)
    }
@@ -95,7 +97,7 @@ instead:
 
    <pre class="prettyprint lang-go">
    var name string
-   err = db.QueryRow("select name from users where id = ?", 1).Scan(&amp;name)
+   err = db.QueryRow("select name from users where id = ?", 1).Scan(name)
    if err != nil {
        if err == sql.ErrNoRows {
            // there were no rows, but otherwise no error occurred

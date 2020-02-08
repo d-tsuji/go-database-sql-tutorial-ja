@@ -109,7 +109,7 @@ it can't be done at present. It might seem that you'd be able to call a
 simple procedure that returns a single result set, by executing
 something like this:</p>
 <pre class="prettyprint lang-go">
-err := db.QueryRow("CALL mydb.myprocedure").Scan(&amp;result) // Error
+err := db.QueryRow("CALL mydb.myprocedure").Scan(result) // Error
 </pre><p>In fact, this won't work. You'll get the following error: <em>Error 1312:
 PROCEDURE mydb.myprocedure can't return a result set in the given
 context</em>. This is because MySQL expects the connection to be set into

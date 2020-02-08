@@ -92,7 +92,7 @@ something like this:
 .. raw:: html
 
    <pre class="prettyprint lang-go">
-   err := db.QueryRow("CALL mydb.myprocedure").Scan(&amp;result) // Error
+   err := db.QueryRow("CALL mydb.myprocedure").Scan(result) // Error
    </pre>
 
 In fact, this won't work. You'll get the following error: *Error 1312:
