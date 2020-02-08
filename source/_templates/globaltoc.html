@@ -1,0 +1,20 @@
+<div id="toc" class="sidebarRow">
+    <h5>GO DATABASE/SQL TUTORIAL</h5>
+
+    {%- if sphinx_version[:3] >= '1.2' %}
+    {{ toctree (maxdepth=1, collapse=False, includehidden=True) }}
+    {% else %}
+    {{ toctree(maxdepth=1, collapse=False) }}
+    {% endif %}
+</div>
+
+<style type="text/css">
+    .toctree-l1 {
+        font-size: 12px;
+        margin-bottom: 0;
+        font-stretch: normal;
+        font-style: normal;
+        line-height: 1.33;
+        padding-bottom: 5px;
+        margin: 2px;
+    }
