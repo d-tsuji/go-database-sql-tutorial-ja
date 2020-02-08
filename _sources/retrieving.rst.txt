@@ -41,6 +41,10 @@ Goの ``database/sql`` の関数名は重要です。関数名に ``Query`` と�
        log.Fatal(err)
    }
 
+.. note::
+
+   上記の実装ではエラーがあった場合に ``log.Fatal(err)`` としていますが、実践的には呼び出し元に ``return err`` するなどして、より適切にハンドリングすべきです
+
 上記のコードで行われていることは次のとおりです。
 
 #. ``db.Query()`` を用いてデータベースにクエリを発行します。そしてエラーをチェックします。
@@ -54,74 +58,29 @@ Goの ``database/sql`` の関数名は重要です。関数名に ``Query`` と�
 上記の処理は間違えやすく、悪い結果になる可能性があります。
 
 - ``for rows.Next()`` のループの最後に必ずエラーをチェックする必要があります。ループ中にエラーが発生した場合、エラーについて知る必要があります。すべての行を処理するまで、ループが繰り返されるわけではありません。
+- 次にリザルトセットがOpenしている限り、コネクションがビジーで、他のクエリには使用できません。つまりコネクションプールとしては使用できないということです。``rows.Next()`` ですべての行が反復処理され、最後の行を読み込むと ``rows.Next()`` で内部的に EOF エラーが発生し、 ``rows.Close()`` が呼び出されます。ただし、なんらかの理由で早期のreturnなどといったループの途中で終了するとリザルトセットはCloseされず、コネクションはOpenしたまま残ります。 ``rows.Next()`` がエラーのためにfalseを返す場合は自動的にCloseされます。これはリソースを使い果たす簡単な方法です。
+- ``rows.Close()`` はすでにCloseされていても無害な操作になるため、何度も呼び出すことができます。ただし、実行時のpanicを避けるために、エラーをチェックし、エラーがないときのみ  ``rows.Close()`` を呼び出すことに注意してください。
+- ループの最後で明示的に ``rows.Close()`` を呼び出す場合でも常に ``defer rows.Close()`` を実装すべきです。これは悪い考えではありません。
+- ループの中で ``defer`` を呼ばないでください。``defer`` ステートメントは関数が終了するまで実行されません。そのため長時間実行される関数では使うべきではありません。使用すると少しずつメモリ使用量が増えます。繰り返しクエリを発行し、ループ内で結果を処理する場合は、それぞれの結果を処理したときに明示的に ``rows.Close()`` を呼び出し、``defer`` を使うべきではありません。
 
--  You should always check for an error at the end of the
-   ``for rows.Next()`` loop. If there's an error during the loop, you
-   need to know about it. Don't just assume that the loop iterates until
-   you've processed all the rows.
--  Second, as long as there's an open result set (represented by
-   ``rows``), the underlying connection is busy and can't be used for
-   any other query. That means it's not available in the connection
-   pool. If you iterate over all of the rows with ``rows.Next()``,
-   eventually you'll read the last row, and ``rows.Next()`` will
-   encounter an internal EOF error and call ``rows.Close()`` for you.
-   But if for some reason you exit that loop -- an early return, or so
-   on -- then the ``rows`` doesn't get closed, and the connection
-   remains open. (It is auto-closed if ``rows.Next()`` returns false due
-   to an error, though). This is an easy way to run out of resources.
--  ``rows.Close()`` is a harmless no-op if it's already closed, so you
-   can call it multiple times. Notice, however, that we check the error
-   first, and only call ``rows.Close()`` if there isn't an error, in
-   order to avoid a runtime panic.
--  You should **always ``defer rows.Close()``**, even if you also call
-   ``rows.Close()`` explicitly at the end of the loop, which isn't a bad
-   idea.
--  Don't ``defer`` within a loop. A deferred statement doesn't get
-   executed until the function exits, so a long-running function
-   shouldn't use it. If you do, you will slowly accumulate memory. If
-   you are repeatedly querying and consuming result sets within a loop,
-   you should explicitly call ``rows.Close()`` when you're done with
-   each result, and not use ``defer``.
+Scan() の動作方法
+====================
 
-How Scan() Works
-================
+行を反復処理し、結果を変数にスキャンすると、Goはバックグラウンドでデータ型の変換を行います。これは結果を格納する変数の型に基づいています。これに注意することで、コードをきれいにし、繰り返しの作業を避けることができます。
 
-When you iterate over rows and scan them into destination variables, Go
-performs data type conversions work for you, behind the scenes. It is
-based on the type of the destination variable. Being aware of this can
-clean up your code and help avoid repetitive work.
+例えば、``VARCHAR(45)`` などの文字列のカラムとして定義されたテーブルからいくつかの行をselectするとします。ただしテーブルには常に数値を含んでいるとします。文字列にポインタを渡すと、Goはバイトを文字列にコピーします。これで ``strconv.ParseInt()`` などを用いて値を数値に変換することができます。SQL操作のエラーをチェックする必要があり、また整数の解析エラーをチェックする必要があります。これは面倒で退屈です。
 
-For example, suppose you select some rows from a table that is defined
-with string columns, such as ``VARCHAR(45)`` or similar. You happen to
-know, however, that the table always contains numbers. If you pass a
-pointer to a string, Go will copy the bytes into the string. Now you can
-use ``strconv.ParseInt()`` or similar to convert the value to a number.
-You'll have to check for errors in the SQL operations, as well as errors
-parsing the integer. This is messy and tedious.
+その代わりに、単に ``Scan()`` を数値へのポインタに渡すことができます。Goは数値であることを検出して ``strconv.ParseInt()`` を呼び出します。変換時にエラーが発生した場合、``Scan()`` を呼び出すとエラーが返されます。コードはすっきりと小さくなりました。これは ``database/sql`` の推奨される使い方です。
 
-Or, you can just pass ``Scan()`` a pointer to an integer. Go will detect
-that and call ``strconv.ParseInt()`` for you. If there's an error in
-conversion, the call to ``Scan()`` will return it. Your code is neater
-and smaller now. This is the recommended way to use ``database/sql``.
-
-Preparing Queries
+クエリの準備
 =================
 
-You should, in general, always prepare queries to be used multiple
-times. The result of preparing the query is a prepared statement, which
-can have placeholders (a.k.a. bind values) for parameters that you'll
-provide when you execute the statement. This is much better than
-concatenating strings, for all the usual reasons (avoiding SQL injection
-attacks, for example).
+一般に、複数回クエリを発行するためにクエリの準備をする必要があります。クエリを準備した結果はプリペアードステートメントとなります。このステートメントはプレースホルダ(別名バインド値)としてステートメントの実行時に指定するパラメータを含めることができます。これはすべての理由(例えばSQLインジェクショ攻撃を回避するなど)で、文字列を結合するよりもはるかに優れています。
 
-In MySQL, the parameter placeholder is ``?``, and in PostgreSQL it is
-``$N``, where N is a number. SQLite accepts either of these. In Oracle
-placeholders begin with a colon and are named, like ``:param1``. We'll
-use ``?`` because we're using MySQL as our example.
+MySQLではパラメータのプレースホルダは ``?`` です。PostgreSQLでは ``$N`` (Nは数値)です。SQLiteではどちらでもOKです。Oracleのプレースホルダの場合は ``:param1`` といったコロンと名前から始まる必要がありません。今回の例ではMySQL を用いるため、プレースホルダには ``?`` を使用します。
 
-.. raw:: html
+.. code-block:: go
 
-   <pre class="prettyprint lang-go">
    stmt, err := db.Prepare("select id, name from users where id = ?")
    if err != nil {
        log.Fatal(err)
@@ -138,14 +97,8 @@ use ``?`` because we're using MySQL as our example.
    if err = rows.Err(); err != nil {
        log.Fatal(err)
    }
-   </pre>
 
-Under the hood, ``db.Query()`` actually prepares, executes, and closes a
-prepared statement. That's three round-trips to the database. If you're
-not careful, you can triple the number of database interactions your
-application makes! Some drivers can avoid this in specific cases, but
-not all drivers do. See `prepared statements <prepared.html>`__ for
-more.
+内部的には ``db.Query()`` は実際にプリペアードステートメントの準備、実行、Closeをします。これはデータベースへの3回の往復です。注意を怠ると、アプリケーションが行うデータベースとのやりとりが3倍になります。いくつかのドライバーは特定の場合に回避することができますが、すべてのドライバーが回避できるわけではありません。詳細は `prepared statements <prepared.html>`_ を参照してください。
 
 単一の行のクエリ
 ==================
