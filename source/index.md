@@ -1,8 +1,3 @@
----
-layout: article
-title: Go database/sql tutorial
----
-
 The idiomatic way to use a SQL, or SQL-like, database in Go is through the
 [database/sql package](http://golang.org/pkg/database/sql/).  It provides a
 lightweight interface to a row-oriented database. This website is a

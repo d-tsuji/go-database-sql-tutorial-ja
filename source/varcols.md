@@ -1,8 +1,3 @@
----
-layout: article
-title: Working with Unknown Columns
----
-
 The `Scan()` function requires you to pass exactly the right number of
 destination variables. What if you don't know what the query will return?
 

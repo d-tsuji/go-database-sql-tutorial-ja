@@ -1,8 +1,3 @@
----
-layout: article
-title: Related Reading and Resources
----
-
 Here are some external sources of information we've found to be helpful.
 
 * [http://golang.org/pkg/database/sql/](http://golang.org/pkg/database/sql/)

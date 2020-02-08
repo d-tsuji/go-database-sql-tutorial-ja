@@ -1,8 +1,3 @@
----
-layout: article
-title: Importing a Database Driver
----
-
 To use `database/sql` you'll need the package itself, as well as a driver for
 the specific database you want to use.
 
