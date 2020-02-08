@@ -14,7 +14,7 @@ Here's how you use them:
    <pre class="prettyprint lang-go">
    for rows.Next() {
        var s sql.NullString
-       err := rows.Scan(&amp;s)
+       err := rows.Scan(s)
        // check err
        if s.Valid {
           // use s.String

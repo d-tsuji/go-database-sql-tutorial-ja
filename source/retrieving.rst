@@ -2,34 +2,24 @@
 Retrieving Result Sets
 ==================================
 
-There are several idiomatic operations to retrieve results from the
-datastore.
+----------------------------------
 
-1. Execute a query that returns rows.
-2. Prepare a statement for repeated use, execute it multiple times, and
-   destroy it.
-3. Execute a statement in a once-off fashion, without preparing it for
-   repeated use.
-4. Execute a query that returns a single row. There is a shortcut for
-   this special case.
+データストアから結果を取得する慣用的な方法がいくつかあります。
 
-Go's ``database/sql`` function names are significant. **If a function
-name includes ``Query``, it is designed to ask a question of the
-database, and will return a set of rows**, even if it's empty.
-Statements that don't return rows should not use ``Query`` functions;
-they should use ``Exec()``.
+#. 行を返すクエリを発行します。
+#. 繰り返し用いるステートメントを準備し、複数回の実行と破棄をします。
+#. 繰り返し使用するための準備をせずに、一度だけのステートメントを実行します。
+#. 単一の行を返すクエリを発行します。この場合はショートカットがあります。
 
-Fetching Data from the Database
-===============================
+Goの ``database/sql`` の関数名は重要です。関数名に ``Query`` という文字を含んでいれば、データベースにクエリを発行し、空行も可能な行の集合を返すために設計されているとわかります。行を返さないステートメントの場合、 ``Query`` 関数名を使うべきではなく、 ``Exec()`` を用いるべきです。
 
-Let's take a look at an example of how to query the database, working
-with results. We'll query the ``users`` table for a user whose ``id`` is
-1, and print out the user's ``id`` and ``name``. We will assign results
-to variables, a row at a time, with ``rows.Scan()``.
+データベースからのデータの取得
+===================================
 
-.. raw:: html
+データベースにクエリを発行して、結果を取得する方法の例を見てみましょう。``user`` テーブルから ``id`` が1であるユーザを取得し、``id`` と ``name`` を表示します。``rows.Scan()`` を使用して1度に1行ずつ、変数に結果を割り当てます。
 
-   <pre class="prettyprint lang-go">
+.. code-block:: go
+
    var (
        id int
        name string
@@ -40,7 +30,7 @@ to variables, a row at a time, with ``rows.Scan()``.
    }
    defer rows.Close()
    for rows.Next() {
-       err := rows.Scan(&amp;id, &amp;name)
+       err := rows.Scan(id, name)
        if err != nil {
            log.Fatal(err)
        }
@@ -50,24 +40,20 @@ to variables, a row at a time, with ``rows.Scan()``.
    if err != nil {
        log.Fatal(err)
    }
-   </pre>
 
-Here's what's happening in the above code:
+上記のコードで行われていることは次のとおりです。
 
-1. We're using ``db.Query()`` to send the query to the database. We
-   check the error, as usual.
-2. We defer ``rows.Close()``. This is very important.
-3. We iterate over the rows with ``rows.Next()``.
-4. We read the columns in each row into variables with ``rows.Scan()``.
-5. We check for errors after we're done iterating over the rows.
+#. ``db.Query()`` を用いてデータベースにクエリを発行します。そしてエラーをチェックします。
+#. ``defer rows.Close()`` とします。これはとても重要です。
+#. ``rows.Next()`` を用いて行を繰り返し処理します。
+#. ``rows.Scan()`` を用いて、それぞれの行のカラムを結果を変数に読み込みます。
+#. 行の反復処理が完了したら、エラーをチェックします。
 
-This is pretty much the only way to do it in Go. You can't get a row as
-a map, for example. That's because everything is strongly typed. You
-need to create variables of the correct type and pass pointers to them,
-as shown.
+これはGoで行う唯一の方法です。たとえば行をmapとして取得することはできません。なぜならすべてが強く型付けされているためです。次に示すように、適切な型の変数を宣言し、ポインタとして渡す必要があります。
 
-A couple parts of this are easy to get wrong, and can have bad
-consequences.
+上記の処理は間違えやすく、悪い結果になる可能性があります。
+
+- ``for rows.Next()`` のループの最後に必ずエラーをチェックする必要があります。ループ中にエラーが発生した場合、エラーについて知る必要があります。すべての行を処理するまで、ループが繰り返されるわけではありません。
 
 -  You should always check for an error at the end of the
    ``for rows.Next()`` loop. If there's an error during the loop, you
@@ -161,42 +147,35 @@ application makes! Some drivers can avoid this in specific cases, but
 not all drivers do. See `prepared statements <prepared.html>`__ for
 more.
 
-Single-Row Queries
+単一の行のクエリ
 ==================
 
-If a query returns at most one row, you can use a shortcut around some
-of the lengthy boilerplate code:
+クエリが高々1行しか返さない場合、長々とした定型的なコードの代わりにショートカットを使うことができます。
 
-.. raw:: html
+.. code-block:: go
 
-   <pre class="prettyprint lang-go">
    var name string
-   err = db.QueryRow("select name from users where id = ?", 1).Scan(&amp;name)
+   err = db.QueryRow("select name from users where id = ?", 1).Scan(name)
    if err != nil {
        log.Fatal(err)
    }
    fmt.Println(name)
-   </pre>
 
-Errors from the query are deferred until ``Scan()`` is called, and then
-are returned from that. You can also call ``QueryRow()`` on a prepared
-statement:
+クエリからのエラーは ``Scan()`` が呼ばれるまで遅延され、呼び出されると返ってきます。プリペアステートメントとして ``QueryRow()`` を呼ぶこともできます。
 
-.. raw:: html
+.. code-block:: go
 
-   <pre class="prettyprint lang-go">
    stmt, err := db.Prepare("select name from users where id = ?")
    if err != nil {
        log.Fatal(err)
    }
    defer stmt.Close()
    var name string
-   err = stmt.QueryRow(1).Scan(&amp;name)
+   err = stmt.QueryRow(1).Scan(name)
    if err != nil {
        log.Fatal(err)
    }
    fmt.Println(name)
-   </pre>
 
-**Previous: `Accessing the Database <accessing.html>`__** **Next:
-`Modifying Data and Using Transactions <modifying.html>`__**
+| 前に戻る: `Accessing the Database <accessing.html>`_
+| 次に進む:`Modifying Data and Using Transactions <modifying.html>`_
