@@ -1,17 +1,16 @@
 ==================================
-Working with NULLs
+NULLの使用
 ==================================
 
-Nullable columns are annoying and lead to a lot of ugly code. If you
-can, avoid them. If not, then you'll need to use special types from the
-``database/sql`` package to handle them, or define your own.
+NULLのカラムは迷惑であって、見通しの悪いコードにつながります。可能であれば避けてください。そうでない場合は、``database/sql`` パッケージの特定の型を用いて実装するか、独自の型を定義する必要があります。
+
+NULLを許可するブール値、文字列、整数、および浮動小数点数には型があります。使用方法は次のとおりです。
 
 There are types for nullable booleans, strings, integers, and floats.
 Here's how you use them:
 
 .. code-block:: go
 
-   <pre class="prettyprint lang-go">
    for rows.Next() {
        var s sql.NullString
        err := rows.Scan(s)
@@ -22,44 +21,19 @@ Here's how you use them:
           // NULL value
        }
    }
-   </pre>
 
-Limitations of the nullable types, and reasons to avoid nullable columns
-in case you need more convincing:
+Nullableな型の制限やNullableなカラムを避ける理由を示します。
 
-1. There's no ``sql.NullUint64`` or ``sql.NullYourFavoriteType``. You'd
-   need to define your own for this.
-2. Nullability can be tricky, and not future-proof. If you think
-   something won't be null, but you're wrong, your program will crash,
-   perhaps rarely enough that you won't catch errors before you ship
-   them.
-3. One of the nice things about Go is having a useful default zero-value
-   for every variable. This isn't the way nullable things work.
+#. ``sql.NullUint64`` または ``sql.NullYourFavoriteType`` はありません。このために独自に定義する必要があります。
+#. Nullを許容する場合は注意が必要になる場合があり、将来に渡って使うことができません。何かの値が NULL でないと思いますが、間違っているとプログラムがクラッシュします。出荷する前に捕捉できないほど、たまにしか発生しないでしょう。
+#. Goの良い点の1つは、すべての変数に便利なデフォルトのゼロ値を持つことです。これはnull値を許可するものの動作方法ではありません。
 
-If you need to define your own types to handle NULLs, you can copy the
-design of ``sql.NullString`` to achieve that.
+NULLを処理するために独自の型を定義する必要がある場合は、``sql.NullString`` の設計をコピーして実現できます。
 
-If you can't avoid having NULL values in your database, there is another
-work around that most database systems support, namely ``COALESCE()``.
-Something like the following might be something that you can use,
-without introducing a myriad of ``sql.Null*`` types.
+データベースにNULL値が含まれることを避けられない場合は、ほとんどのデータベースシステムがサポートしている ``COALESCE()`` の回避策があります。 次のようなものは、無数の ``sql.Null*``  型を導入することなく使用できるものです。
 
-.. code-block:: go
+.. literalinclude:: progs/nullable.go
+    :language: go
 
-   <pre class="prettyprint lang-go">
-   rows, err := db.Query(`
-       SELECT
-           name,
-           COALESCE(other_field, '') as otherField
-       WHERE id = ?
-   `, 42)
-
-   for rows.Next() {
-       err := rows.Scan(&name, &otherField)
-       // ..
-       // If `other_field` was NULL, `otherField` is now an empty string. This works with other data types as well.
-   }
-   </pre>
-
-**Previous: `Handling Errors <errors.html>`__** **Next: `Working with
-Unknown Columns <varcols.html>`__**
+| 前に戻る: `Handling Errors <errors.html>`_
+| 次に進む: `Working with Unknown Columns <varcols.html>`_

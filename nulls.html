@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>Working with NULLs &#8212; Go database/sql tutorial  ドキュメント</title>
+    <title>NULLの使用 &#8212; Go database/sql tutorial  ドキュメント</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -15,7 +15,7 @@
     <script src="_static/translations.js"></script>
     <link rel="index" title="索引" href="genindex.html" />
     <link rel="search" title="検索" href="search.html" />
-    <link rel="next" title="Working with Unknown Columns" href="varcols.html" />
+    <link rel="next" title="不明な列の操作" href="varcols.html" />
     <link rel="prev" title="エラーの扱い" href="errors.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -33,15 +33,13 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="working-with-nulls">
-<h1>Working with NULLs<a class="headerlink" href="#working-with-nulls" title="このヘッドラインへのパーマリンク">¶</a></h1>
-<p>Nullable columns are annoying and lead to a lot of ugly code. If you
-can, avoid them. If not, then you'll need to use special types from the
-<code class="docutils literal notranslate"><span class="pre">database/sql</span></code> package to handle them, or define your own.</p>
+  <div class="section" id="null">
+<h1>NULLの使用<a class="headerlink" href="#null" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p>NULLのカラムは迷惑であって、見通しの悪いコードにつながります。可能であれば避けてください。そうでない場合は、<code class="docutils literal notranslate"><span class="pre">database/sql</span></code> パッケージの特定の型を用いて実装するか、独自の型を定義する必要があります。</p>
+<p>NULLを許可するブール値、文字列、整数、および浮動小数点数には型があります。使用方法は次のとおりです。</p>
 <p>There are types for nullable booleans, strings, integers, and floats.
 Here's how you use them:</p>
-<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
-<span class="k">for</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Next</span><span class="p">()</span> <span class="p">{</span>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Next</span><span class="p">()</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">s</span> <span class="nx">sql</span><span class="p">.</span><span class="nx">NullString</span>
     <span class="nx">err</span> <span class="o">:=</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Scan</span><span class="p">(</span><span class="nx">s</span><span class="p">)</span>
     <span class="c1">// check err</span>
@@ -51,45 +49,34 @@ Here's how you use them:</p>
        <span class="c1">// NULL value</span>
     <span class="p">}</span>
 <span class="p">}</span>
-<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
 </pre></div>
 </div>
-<p>Limitations of the nullable types, and reasons to avoid nullable columns
-in case you need more convincing:</p>
+<p>Nullableな型の制限やNullableなカラムを避ける理由を示します。</p>
 <ol class="arabic simple">
-<li><p>There's no <code class="docutils literal notranslate"><span class="pre">sql.NullUint64</span></code> or <code class="docutils literal notranslate"><span class="pre">sql.NullYourFavoriteType</span></code>. You'd
-need to define your own for this.</p></li>
-<li><p>Nullability can be tricky, and not future-proof. If you think
-something won't be null, but you're wrong, your program will crash,
-perhaps rarely enough that you won't catch errors before you ship
-them.</p></li>
-<li><p>One of the nice things about Go is having a useful default zero-value
-for every variable. This isn't the way nullable things work.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sql.NullUint64</span></code> または <code class="docutils literal notranslate"><span class="pre">sql.NullYourFavoriteType</span></code> はありません。このために独自に定義する必要があります。</p></li>
+<li><p>Nullを許容する場合は注意が必要になる場合があり、将来に渡って使うことができません。何かの値が NULL でないと思いますが、間違っているとプログラムがクラッシュします。出荷する前に捕捉できないほど、たまにしか発生しないでしょう。</p></li>
+<li><p>Goの良い点の1つは、すべての変数に便利なデフォルトのゼロ値を持つことです。これはnull値を許可するものの動作方法ではありません。</p></li>
 </ol>
-<p>If you need to define your own types to handle NULLs, you can copy the
-design of <code class="docutils literal notranslate"><span class="pre">sql.NullString</span></code> to achieve that.</p>
-<p>If you can't avoid having NULL values in your database, there is another
-work around that most database systems support, namely <code class="docutils literal notranslate"><span class="pre">COALESCE()</span></code>.
-Something like the following might be something that you can use,
-without introducing a myriad of <code class="docutils literal notranslate"><span class="pre">sql.Null*</span></code> types.</p>
-<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
-<span class="nx">rows</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">`</span>
-<span class="s">    SELECT</span>
-<span class="s">        name,</span>
-<span class="s">        COALESCE(other_field, &#39;&#39;) as otherField</span>
-<span class="s">    WHERE id = ?</span>
+<p>NULLを処理するために独自の型を定義する必要がある場合は、<code class="docutils literal notranslate"><span class="pre">sql.NullString</span></code> の設計をコピーして実現できます。</p>
+<p>データベースにNULL値が含まれることを避けられない場合は、ほとんどのデータベースシステムがサポートしている <code class="docutils literal notranslate"><span class="pre">COALESCE()</span></code> の回避策があります。 次のようなものは、無数の <code class="docutils literal notranslate"><span class="pre">sql.Null*</span></code>  型を導入することなく使用できるものです。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">rows</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">`</span>
+<span class="s">SELECT</span>
+<span class="s">	name,</span>
+<span class="s">	COALESCE(other_field, &#39;&#39;) as otherField</span>
+<span class="s">WHERE id = ?</span>
 <span class="s">`</span><span class="p">,</span> <span class="mi">42</span><span class="p">)</span>
 
 <span class="k">for</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Next</span><span class="p">()</span> <span class="p">{</span>
-    <span class="nx">err</span> <span class="o">:=</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Scan</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">name</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">otherField</span><span class="p">)</span>
-    <span class="c1">// ..</span>
-    <span class="c1">// If `other_field` was NULL, `otherField` is now an empty string. This works with other data types as well.</span>
+<span class="nx">err</span> <span class="o">:=</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Scan</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">name</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">otherField</span><span class="p">)</span>
+<span class="c1">// ..</span>
+<span class="c1">// If `other_field` was NULL, `otherField` is now an empty string. This works with other data types as well.</span>
 <span class="p">}</span>
-<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
 </pre></div>
 </div>
-<p><strong>Previous: `Handling Errors &lt;errors.html&gt;`__</strong> <strong>Next: `Working with
-Unknown Columns &lt;varcols.html&gt;`__</strong></p>
+<div class="line-block">
+<div class="line">前に戻る: <a class="reference external" href="errors.html">Handling Errors</a></div>
+<div class="line">次に進む: <a class="reference external" href="varcols.html">Working with Unknown Columns</a></div>
+</div>
 </div>
 
 
@@ -108,8 +95,8 @@ Unknown Columns &lt;varcols.html&gt;`__</strong></p>
 <li class="toctree-l1"><a class="reference internal" href="modifying.html">トランザクションを使ったデータの変更</a></li>
 <li class="toctree-l1"><a class="reference internal" href="prepared.html">プリペアードステートメントの扱い</a></li>
 <li class="toctree-l1"><a class="reference internal" href="errors.html">エラーの扱い</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Working with NULLs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="varcols.html">Working with Unknown Columns</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">NULLの使用</a></li>
+<li class="toctree-l1"><a class="reference internal" href="varcols.html">不明な列の操作</a></li>
 <li class="toctree-l1"><a class="reference internal" href="connection-pool.html">コネクションプール</a></li>
 <li class="toctree-l1"><a class="reference internal" href="surprises.html">Surprises, Antipatterns and Limitations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="references.html">関連資料</a></li>

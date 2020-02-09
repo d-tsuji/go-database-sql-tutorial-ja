@@ -1,24 +1,15 @@
 ==================================
-Working with Unknown Columns
+不明な列の操作
 ==================================
 
 ----------------------------------
 
-The ``Scan()`` function requires you to pass exactly the right number of
-destination variables. What if you don't know what the query will
-return?
+``Scan()`` 関数では、正確な数の結果を保持する変数を渡す必要があります。クエリが何を返すかわからない場合はどうしますか？
 
-If you don't know how many columns the query will return, you can use
-``Columns()`` to find a list of column names. You can examine the length
-of this list to see how many columns there are, and you can pass a slice
-into ``Scan()`` with the correct number of values. For example, some
-forks of MySQL return different columns for the ``SHOW PROCESSLIST``
-command, so you have to be prepared for that or you'll cause an error.
-Here's one way to do it; there are others:
+クエリが返す列の数がわからない場合は、 ``Columns()`` を使用して列名のリストを検索できます。このリストの長さを調べて列の数を確認し、正しい数の値でスライスを ``Scan()`` に渡すことができます。 たとえば、MySQLからフォークした一部 [#]_ は ``SHOW PROCESSLIST`` コマンドに対して異なる列を返すため、そのために準備する必要があります。そうしないと、エラーが発生します。 これを行う1つの方法は次のとおりです。 他にもあります：
 
 .. code-block:: go
 
-   <pre class="prettyprint lang-go">
    cols, err := rows.Columns()
    if err != nil {
        // handle the error
@@ -41,14 +32,11 @@ Here's one way to do it; there are others:
        err = rows.Scan(dest...)
        // Work with the values in dest
    }
-   </pre>
 
-If you don't know the columns or their types, you should use
-``sql.RawBytes``.
+列またはその型がわからない場合は、``sql.RawBytes`` を使用する必要があります。
 
 .. code-block:: go
 
-   <pre class="prettyprint lang-go">
    cols, err := rows.Columns() // Remember to check err afterwards
    vals := make([]interface{}, len(cols))
    for i, _ := range cols {
@@ -60,7 +48,8 @@ If you don't know the columns or their types, you should use
        // and you can use type introspection and type assertions
        // to fetch the column into a typed variable.
    }
-   </pre>
 
-**Previous: `Working with NULLs <nulls.html>`__** **Next: `The
-Connection Pool <connection-pool.html>`__**
+| 前に戻る: `Working with NULLs <nulls.html>`_
+| 次に進む: `The Connection Pool <connection-pool.html>`_
+
+.. [#] MariaDBなど
