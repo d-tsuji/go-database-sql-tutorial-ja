@@ -35,90 +35,42 @@
             
   <div class="section" id="using-prepared-statements">
 <h1>Using Prepared Statements<a class="headerlink" href="#using-prepared-statements" title="このヘッドラインへのパーマリンク">¶</a></h1>
-<p>Prepared statements have all the usual benefits in Go: security,
-efficiency, convenience. But the way they're implemented is a little
-different from what you might be used to, especially with regards to how
-they interact with some of the internals of <code class="docutils literal notranslate"><span class="pre">database/sql</span></code>.</p>
-<div class="section" id="prepared-statements-and-connections">
-<h2>Prepared Statements And Connections<a class="headerlink" href="#prepared-statements-and-connections" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>At the database level, a prepared statement is bound to a single
-database connection. The typical flow is that the client sends a SQL
-statement with placeholders to the server for preparation, the server
-responds with a statement ID, and then the client executes the statement
-by sending its ID and parameters.</p>
-<p>In Go, however, connections are not exposed directly to the user of the
-<code class="docutils literal notranslate"><span class="pre">database/sql</span></code> package. You don't prepare a statement on a connection.
-You prepare it on a <code class="docutils literal notranslate"><span class="pre">DB</span></code> or a <code class="docutils literal notranslate"><span class="pre">Tx</span></code>. And <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> has some
-convenience behaviors such as automatic retries. For these reasons, the
-underlying association between prepared statements and connections,
-which exists at the driver level, is hidden from your code.</p>
-<p>Here's how it works:</p>
+<p>Goのプリペアードステートメントは、よく知られた利点(セキュリティ、効率性、利便性)はすべてあります。ただし、それらの実装方法は、特に <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> の内部のやり取りに関して、よく知られているものとは少し異なるかもしれません。</p>
+<div class="section" id="id1">
+<h2>プリペアードステートメントとコネクション<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>データベースのレイヤーでは、プリペアードステートメントは単一のデータベース接続に紐付けられます。典型的な流れは、クライアントがプレースホルダ付きのSQLステートメントをサーバーに準備として送信します。サーバーからはステートメントIDがレスポンスとして返ってきて、クライアントはレスポンスIDとパラメータを送信することでステートメントを実行します。</p>
+<p>しかしGoでは <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> パッケージのユーザーには直接コネクションが公開されることはありません。接続に関するステートメントを準備する必要はありません。<code class="docutils literal notranslate"><span class="pre">DB</span></code> or a <code class="docutils literal notranslate"><span class="pre">Tx</span></code> を用いて準備します。そして <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> は自動リトライなどのいくつかの便利な機能があります。これらの理由によってドライバーのレイヤで存在するプリペアードステートメントとコネクションの紐付けは、コードには表れません。</p>
+<p>仕組みは次のとおりです。</p>
 <ol class="arabic simple">
-<li><p>When you prepare a statement, it's prepared on a connection in the
-pool.</p></li>
-<li><p>The <code class="docutils literal notranslate"><span class="pre">Stmt</span></code> object remembers which connection was used.</p></li>
-<li><p>When you execute the <code class="docutils literal notranslate"><span class="pre">Stmt</span></code>, it tries to use the connection. If
-it's not available because it's closed or busy doing something else,
-it gets another connection from the pool <em>and re-prepares the
-statement with the database on another connection.</em></p></li>
+<li><p>ステートメントを準備すると、プールからコネクションが準備されます。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Stmt</span></code> オブジェクトはどのコネクションが使われているか把握します。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Stmt</span></code> を実行すると、コネクションを使うように試行します。もしコネクションが閉じているか、別の何かの操作でビジーになっていて、コネクションが使用できない場合、プールから別のコネクションを取得し <em>別のコネクションでステートメントを再準備します</em> 。</p></li>
 </ol>
-<p>Because statements will be re-prepared as needed when their original
-connection is busy, it's possible for high-concurrency usage of the
-database, which may keep a lot of connections busy, to create a large
-number of prepared statements. This can result in apparent leaks of
-statements, statements being prepared and re-prepared more often than
-you think, and even running into server-side limits on the number of
-statements.</p>
+<p>元のコネクションがビジーの場合、必要に応じてステートメントは再準備されます。多数の接続がビジー状態のままになるような高い並列度で使用することができ、たくさんのプリペアードステートメントを作成することができます。これにより、ステートメントのリークをもたらす可能性があります。予想よりも頻繁に再準備され、サーバー側ではステートメントの数が制限されることさえあります。</p>
 </div>
-<div class="section" id="avoiding-prepared-statements">
-<h2>Avoiding Prepared Statements<a class="headerlink" href="#avoiding-prepared-statements" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>Go creates prepared statements for you under the covers. A simple
-<code class="docutils literal notranslate"><span class="pre">db.Query(sql,</span> <span class="pre">param1,</span> <span class="pre">param2)</span></code>, for example, works by preparing the
-sql, then executing it with the parameters and finally closing the
-statement.</p>
-<p>Sometimes a prepared statement is not what you want, however. There
-might be several reasons for this:</p>
+<div class="section" id="id2">
+<h2>プリペアードステートメントの回避<a class="headerlink" href="#id2" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>Goは内部でプリペアードステートメントを作成します。簡単な例として <code class="docutils literal notranslate"><span class="pre">db.Query(sql,</span> <span class="pre">param1,</span> <span class="pre">param2)</span></code> はSQLを準備し、パラメータを受け取って実行され、ステートメントは閉じられることで機能します。</p>
+<p>いくつかの場面で、プリペアードステートメントが必要でない場合もあります。以下の理由によるものです。</p>
 <ol class="arabic simple">
-<li><p>The database doesn't support prepared statements. When using the
-MySQL driver, for example, you can connect to MemSQL and Sphinx,
-because they support the MySQL wire protocol. But they don't support
-the &quot;binary&quot; protocol that includes prepared statements, so they can
-fail in confusing ways.</p></li>
-<li><p>The statements aren't reused enough to make them worthwhile, and
-security issues are handled in other ways, so performance overhead is
-undesired. An example of this can be seen at the <a class="reference external" href="https://vividcortex.com/blog/2014/11/19/analyzing-prepared-statement-performance-with-vividcortex/">VividCortex
-blog</a>.</p></li>
+<li><p>データベースがプリペアードステートメントをサポートしていない場合。例えばMySQLドライバーを使ってMemSQLやSphinxに接続することができますが、これはMySQLのWireプロトコルをサポートしているためです。しかしプリペアードステートメントを含む、&quot;バイナリ&quot; のプロトコルはサポートしていないため、わかりにくい理由で失敗することがあります。</p></li>
+<li><p>ステートメントは再利用する価値がなく、セキュリティの問題は別の方法で扱われる場合です。プリペアードステートメントはパフォーマンスの観点で望ましくないためです。この例は <a class="reference external" href="https://vividcortex.com/blog/2014/11/19/analyzing-prepared-statement-performance-with-vividcortex/">VividCortex blog</a> で見ることができます。</p></li>
 </ol>
-<p>If you don't want to use a prepared statement, you need to use
-<code class="docutils literal notranslate"><span class="pre">fmt.Sprint()</span></code> or similar to assemble the SQL, and pass this as the
-only argument to <code class="docutils literal notranslate"><span class="pre">db.Query()</span></code> or <code class="docutils literal notranslate"><span class="pre">db.QueryRow()</span></code>. And your driver
-needs to support plaintext query execution, which is added in Go 1.1 via
-the <code class="docutils literal notranslate"><span class="pre">Execer</span></code> and <code class="docutils literal notranslate"><span class="pre">Queryer</span></code> interfaces, <a class="reference external" href="http://golang.org/pkg/database/sql/driver/#Execer">documented
-here</a>.</p>
+<p>プリペアードステートメントを使用したくない場合は、<code class="docutils literal notranslate"><span class="pre">fmt.Sprint()</span></code> などを用いてSQLを組み立てる必要があり、<code class="docutils literal notranslate"><span class="pre">db.Query()</span></code> や <code class="docutils literal notranslate"><span class="pre">db.QueryRow()</span></code> に唯一の引数として渡す必要があります。またドライバーは素のテキストクエリの実行をサポートする必要があります。これはGo1.1で追加された <code class="docutils literal notranslate"><span class="pre">Execer</span></code> や <code class="docutils literal notranslate"><span class="pre">Queryer</span></code> インターフェースを実装します。詳細は <a class="reference external" href="http://golang.org/pkg/database/sql/driver/#Execer">documented here</a> を参照ください。</p>
 </div>
-<div class="section" id="prepared-statements-in-transactions">
-<h2>Prepared Statements in Transactions<a class="headerlink" href="#prepared-statements-in-transactions" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>Prepared statements that are created in a <code class="docutils literal notranslate"><span class="pre">Tx</span></code> are bound exclusively
-to it, so the earlier cautions about repreparing do not apply. When you
-operate on a <code class="docutils literal notranslate"><span class="pre">Tx</span></code> object, your actions map directly to the one and
-only one connection underlying it.</p>
-<p>This also means that prepared statements created inside a <code class="docutils literal notranslate"><span class="pre">Tx</span></code> can't
-be used separately from it. Likewise, prepared statements created on a
-<code class="docutils literal notranslate"><span class="pre">DB</span></code> can't be used within a transaction, because they will be bound to
-a different connection.</p>
-<p>To use a prepared statement prepared outside the transaction in a
-<code class="docutils literal notranslate"><span class="pre">Tx</span></code>, you can use <code class="docutils literal notranslate"><span class="pre">Tx.Stmt()</span></code>, which will create a new
-transaction-specific statement from the one prepared outside the
-transaction. It does this by taking an existing prepared statement,
-setting the connection to that of the transaction and repreparing all
-statements every time they are executed. This behavior and its
-implementation are undesirable and there's even a TODO in the
-<code class="docutils literal notranslate"><span class="pre">database/sql</span></code> source code to improve it; we advise against using
-this.</p>
-<p>Caution must be exercised when working with prepared statements in
-transactions. Consider the following example:</p>
-<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
-<span class="nx">tx</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Begin</span><span class="p">()</span>
+<div class="section" id="id3">
+<h2>トランザクション内でのプリペアードステートメント<a class="headerlink" href="#id3" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">Tx</span></code> 内で作成されたプリペアードステートメントは <code class="docutils literal notranslate"><span class="pre">Tx</span></code> のみに紐付いているため、再準備に関する以前の注意事項は適用されません。<code class="docutils literal notranslate"><span class="pre">Tx</span></code> オブジェクトを操作する場合、その操作はバックグラウンドの唯一のコネクションにのみ直接マッピングされます。</p>
+<div class="admonition note">
+<p class="admonition-title">注釈</p>
+<p>訳を改善する。
+<code class="docutils literal notranslate"><span class="pre">Tx</span></code> 内で作成されたプリペアードステートメントは <code class="docutils literal notranslate"><span class="pre">Tx</span></code> のみに紐付いているため、再準備に関する以前の注意事項は適用されません。
+Prepared statements that are created in a <code class="docutils literal notranslate"><span class="pre">Tx</span></code> are bound exclusively to it, so the earlier cautions about repreparing do not apply.</p>
+</div>
+<p>これは <code class="docutils literal notranslate"><span class="pre">Tx</span></code> の中で作成されたプリペアードステートメントはそのトランザクションと分離して用いることができない、ということを意味します。同様に、<code class="docutils literal notranslate"><span class="pre">DB</span></code> で作成されたプリペアードステートメントはトランザクション内で使うことができません。<code class="docutils literal notranslate"><span class="pre">Tx</span></code> と <code class="docutils literal notranslate"><span class="pre">DB</span></code> はことなるコネクションに紐付いているためです。</p>
+<p><code class="docutils literal notranslate"><span class="pre">Tx</span></code> でトランザクション外で準備されたプリペアードステートメントを使う場合、<code class="docutils literal notranslate"><span class="pre">Tx.Stmt()</span></code> を使うことができます。これによりトランザクション外で準備されたステートメントからトランザクション固有のステートメントが作成されます。これは既存のプリペアードステートメントを取得し、トランザクションのコネクションに設定し、実行されるたびにすべてのステートメントを再準備します。この動作と実装は望ましくなく、 <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> のソースコードにも TODO があります。これを使用しないことを推奨します。</p>
+<p>トランザクションでプリペアードステートメントを使う場合は注意が必要です。以下の例について考えてみましょう。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">tx</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Begin</span><span class="p">()</span>
 <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
     <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
 <span class="p">}</span>
@@ -139,31 +91,23 @@ transactions. Consider the following example:</p>
     <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
 <span class="p">}</span>
 <span class="c1">// stmt.Close() runs here!</span>
-<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
 </pre></div>
 </div>
-<p>Before Go 1.4 closing a <code class="docutils literal notranslate"><span class="pre">*sql.Tx</span></code> released the connection associated
-with it back into the pool, but the deferred call to Close on the
-prepared statement was executed <strong>after</strong> that has happened, which could
-lead to concurrent access to the underlying connection, rendering the
-connection state inconsistent. If you use Go 1.4 or older, you should
-make sure the statement is always closed before the transaction is
-committed or rolled back. <a class="reference external" href="https://github.com/golang/go/issues/4459">This
-issue</a> was fixed in Go 1.4
-by <a class="reference external" href="https://codereview.appspot.com/131650043">CR 131650043</a>.</p>
+<p>Go1.4以前は <code class="docutils literal notranslate"><span class="pre">sql.Tx</span></code> をCloseするとそれに紐付いているコネクションを開放し、プールに戻します。しかしプリペアードステートメントでCloseを遅延呼び出しすることは、トランザクションが発生した <strong>後</strong> に実行されました。これはコネクションへの同時アクセスにつながり、接続状態に一貫性がありません。Go1.4以前のバージョンを使用する場合、トランザクションがコミットやロールバックされる前に、ステートメントが閉じられていることを確認する必要がありました。 <a class="reference external" href="https://github.com/golang/go/issues/4459">この問題</a> はGo1.4の <a class="reference external" href="https://codereview.appspot.com/131650043">CR 131650043</a> で修正されました。</p>
 </div>
-<div class="section" id="parameter-placeholder-syntax">
-<h2>Parameter Placeholder Syntax<a class="headerlink" href="#parameter-placeholder-syntax" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>The syntax for placeholder parameters in prepared statements is
-database-specific. For example, comparing MySQL, PostgreSQL, and Oracle:</p>
+<div class="section" id="id5">
+<h2>プレースホルダの構文<a class="headerlink" href="#id5" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>プリペアードステートメントで使われるパラメータのプレースホルダの構文はデータベース固有のものです。例としてMySQLとPostgreSQLとOracleを比較しています。</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>MySQL               PostgreSQL            Oracle
 =====               ==========            ======
 WHERE col = ?       WHERE col = $1        WHERE col = :col
 VALUES(?, ?, ?)     VALUES($1, $2, $3)    VALUES(:val1, :val2, :val3)
 </pre></div>
 </div>
-<p><strong>Previous: `Modifying Data and Using Transactions &lt;modifying.html&gt;`__</strong>
-<strong>Next: `Handling Errors &lt;errors.html&gt;`__</strong></p>
+<div class="line-block">
+<div class="line">前に戻る: <a class="reference external" href="modifying.html">Modifying Data and Using Transactions</a></div>
+<div class="line">次に進む: <a class="reference external" href="errors.html">Handling Errors</a></div>
+</div>
 </div>
 </div>
 

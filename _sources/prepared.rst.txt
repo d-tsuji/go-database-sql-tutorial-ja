@@ -2,102 +2,54 @@
 Using Prepared Statements
 ==================================
 
-Prepared statements have all the usual benefits in Go: security,
-efficiency, convenience. But the way they're implemented is a little
-different from what you might be used to, especially with regards to how
-they interact with some of the internals of ``database/sql``.
+Goのプリペアードステートメントは、よく知られた利点(セキュリティ、効率性、利便性)はすべてあります。ただし、それらの実装方法は、特に ``database/sql`` の内部のやり取りに関して、よく知られているものとは少し異なるかもしれません。
 
-Prepared Statements And Connections
+プリペアードステートメントとコネクション
+===========================================
+
+データベースのレイヤーでは、プリペアードステートメントは単一のデータベース接続に紐付けられます。典型的な流れは、クライアントがプレースホルダ付きのSQLステートメントをサーバーに準備として送信します。サーバーからはステートメントIDがレスポンスとして返ってきて、クライアントはレスポンスIDとパラメータを送信することでステートメントを実行します。
+
+しかしGoでは ``database/sql`` パッケージのユーザーには直接コネクションが公開されることはありません。接続に関するステートメントを準備する必要はありません。``DB`` or a ``Tx`` を用いて準備します。そして ``database/sql`` は自動リトライなどのいくつかの便利な機能があります。これらの理由によってドライバーのレイヤで存在するプリペアードステートメントとコネクションの紐付けは、コードには表れません。
+
+仕組みは次のとおりです。
+
+#. ステートメントを準備すると、プールからコネクションが準備されます。
+#. ``Stmt`` オブジェクトはどのコネクションが使われているか把握します。
+#. ``Stmt`` を実行すると、コネクションを使うように試行します。もしコネクションが閉じているか、別の何かの操作でビジーになっていて、コネクションが使用できない場合、プールから別のコネクションを取得し *別のコネクションでステートメントを再準備します* 。
+
+元のコネクションがビジーの場合、必要に応じてステートメントは再準備されます。多数の接続がビジー状態のままになるような高い並列度で使用することができ、たくさんのプリペアードステートメントを作成することができます。これにより、ステートメントのリークをもたらす可能性があります。予想よりも頻繁に再準備され、サーバー側ではステートメントの数が制限されることさえあります。
+
+プリペアードステートメントの回避
 ===================================
 
-At the database level, a prepared statement is bound to a single
-database connection. The typical flow is that the client sends a SQL
-statement with placeholders to the server for preparation, the server
-responds with a statement ID, and then the client executes the statement
-by sending its ID and parameters.
+Goは内部でプリペアードステートメントを作成します。簡単な例として ``db.Query(sql, param1, param2)`` はSQLを準備し、パラメータを受け取って実行され、ステートメントは閉じられることで機能します。
 
-In Go, however, connections are not exposed directly to the user of the
-``database/sql`` package. You don't prepare a statement on a connection.
-You prepare it on a ``DB`` or a ``Tx``. And ``database/sql`` has some
-convenience behaviors such as automatic retries. For these reasons, the
-underlying association between prepared statements and connections,
-which exists at the driver level, is hidden from your code.
+いくつかの場面で、プリペアードステートメントが必要でない場合もあります。以下の理由によるものです。
 
-Here's how it works:
+#. データベースがプリペアードステートメントをサポートしていない場合。例えばMySQLドライバーを使ってMemSQLやSphinxに接続することができますが、これはMySQLのWireプロトコルをサポートしているためです。しかしプリペアードステートメントを含む、"バイナリ" のプロトコルはサポートしていないため、わかりにくい理由で失敗することがあります。
+#. ステートメントは再利用する価値がなく、セキュリティの問題は別の方法で扱われる場合です。プリペアードステートメントはパフォーマンスの観点で望ましくないためです。この例は `VividCortex blog <https://vividcortex.com/blog/2014/11/19/analyzing-prepared-statement-performance-with-vividcortex/>`_ で見ることができます。
 
-1. When you prepare a statement, it's prepared on a connection in the
-   pool.
-2. The ``Stmt`` object remembers which connection was used.
-3. When you execute the ``Stmt``, it tries to use the connection. If
-   it's not available because it's closed or busy doing something else,
-   it gets another connection from the pool *and re-prepares the
-   statement with the database on another connection.*
+プリペアードステートメントを使用したくない場合は、``fmt.Sprint()`` などを用いてSQLを組み立てる必要があり、``db.Query()`` や ``db.QueryRow()`` に唯一の引数として渡す必要があります。またドライバーは素のテキストクエリの実行をサポートする必要があります。これはGo1.1で追加された ``Execer`` や ``Queryer`` インターフェースを実装します。詳細は `documented here <http://golang.org/pkg/database/sql/driver/#Execer>`_ を参照ください。
 
-Because statements will be re-prepared as needed when their original
-connection is busy, it's possible for high-concurrency usage of the
-database, which may keep a lot of connections busy, to create a large
-number of prepared statements. This can result in apparent leaks of
-statements, statements being prepared and re-prepared more often than
-you think, and even running into server-side limits on the number of
-statements.
+トランザクション内でのプリペアードステートメント
+============================================================
 
-Avoiding Prepared Statements
-============================
+``Tx`` 内で作成されたプリペアードステートメントは ``Tx`` のみに紐付いているため、再準備に関する以前の注意事項は適用されません。``Tx`` オブジェクトを操作する場合、その操作はバックグラウンドの唯一のコネクションにのみ直接マッピングされます。
 
-Go creates prepared statements for you under the covers. A simple
-``db.Query(sql, param1, param2)``, for example, works by preparing the
-sql, then executing it with the parameters and finally closing the
-statement.
+.. note:: 
 
-Sometimes a prepared statement is not what you want, however. There
-might be several reasons for this:
+    訳を改善する。
+    ``Tx`` 内で作成されたプリペアードステートメントは ``Tx`` のみに紐付いているため、再準備に関する以前の注意事項は適用されません。
+    Prepared statements that are created in a ``Tx`` are bound exclusively to it, so the earlier cautions about repreparing do not apply.
 
-1. The database doesn't support prepared statements. When using the
-   MySQL driver, for example, you can connect to MemSQL and Sphinx,
-   because they support the MySQL wire protocol. But they don't support
-   the "binary" protocol that includes prepared statements, so they can
-   fail in confusing ways.
-2. The statements aren't reused enough to make them worthwhile, and
-   security issues are handled in other ways, so performance overhead is
-   undesired. An example of this can be seen at the `VividCortex
-   blog <https://vividcortex.com/blog/2014/11/19/analyzing-prepared-statement-performance-with-vividcortex/>`__.
+これは ``Tx`` の中で作成されたプリペアードステートメントはそのトランザクションと分離して用いることができない、ということを意味します。同様に、``DB`` で作成されたプリペアードステートメントはトランザクション内で使うことができません。``Tx`` と ``DB`` はことなるコネクションに紐付いているためです。
 
-If you don't want to use a prepared statement, you need to use
-``fmt.Sprint()`` or similar to assemble the SQL, and pass this as the
-only argument to ``db.Query()`` or ``db.QueryRow()``. And your driver
-needs to support plaintext query execution, which is added in Go 1.1 via
-the ``Execer`` and ``Queryer`` interfaces, `documented
-here <http://golang.org/pkg/database/sql/driver/#Execer>`__.
+``Tx`` でトランザクション外で準備されたプリペアードステートメントを使う場合、``Tx.Stmt()`` を使うことができます。これによりトランザクション外で準備されたステートメントからトランザクション固有のステートメントが作成されます。これは既存のプリペアードステートメントを取得し、トランザクションのコネクションに設定し、実行されるたびにすべてのステートメントを再準備します。この動作と実装は望ましくなく、 ``database/sql`` のソースコードにも TODO があります。これを使用しないことを推奨します。
 
-Prepared Statements in Transactions
-===================================
-
-Prepared statements that are created in a ``Tx`` are bound exclusively
-to it, so the earlier cautions about repreparing do not apply. When you
-operate on a ``Tx`` object, your actions map directly to the one and
-only one connection underlying it.
-
-This also means that prepared statements created inside a ``Tx`` can't
-be used separately from it. Likewise, prepared statements created on a
-``DB`` can't be used within a transaction, because they will be bound to
-a different connection.
-
-To use a prepared statement prepared outside the transaction in a
-``Tx``, you can use ``Tx.Stmt()``, which will create a new
-transaction-specific statement from the one prepared outside the
-transaction. It does this by taking an existing prepared statement,
-setting the connection to that of the transaction and repreparing all
-statements every time they are executed. This behavior and its
-implementation are undesirable and there's even a TODO in the
-``database/sql`` source code to improve it; we advise against using
-this.
-
-Caution must be exercised when working with prepared statements in
-transactions. Consider the following example:
+トランザクションでプリペアードステートメントを使う場合は注意が必要です。以下の例について考えてみましょう。
 
 .. code-block:: go
 
-   <pre class="prettyprint lang-go">
    tx, err := db.Begin()
    if err != nil {
        log.Fatal(err)
@@ -119,23 +71,13 @@ transactions. Consider the following example:
        log.Fatal(err)
    }
    // stmt.Close() runs here!
-   </pre>
 
-Before Go 1.4 closing a ``*sql.Tx`` released the connection associated
-with it back into the pool, but the deferred call to Close on the
-prepared statement was executed **after** that has happened, which could
-lead to concurrent access to the underlying connection, rendering the
-connection state inconsistent. If you use Go 1.4 or older, you should
-make sure the statement is always closed before the transaction is
-committed or rolled back. `This
-issue <https://github.com/golang/go/issues/4459>`__ was fixed in Go 1.4
-by `CR 131650043 <https://codereview.appspot.com/131650043>`__.
+Go1.4以前は ``sql.Tx`` をCloseするとそれに紐付いているコネクションを開放し、プールに戻します。しかしプリペアードステートメントでCloseを遅延呼び出しすることは、トランザクションが発生した **後** に実行されました。これはコネクションへの同時アクセスにつながり、接続状態に一貫性がありません。Go1.4以前のバージョンを使用する場合、トランザクションがコミットやロールバックされる前に、ステートメントが閉じられていることを確認する必要がありました。 `この問題 <https://github.com/golang/go/issues/4459>`_ はGo1.4の `CR 131650043 <https://codereview.appspot.com/131650043>`_ で修正されました。
 
-Parameter Placeholder Syntax
+プレースホルダの構文
 ============================
 
-The syntax for placeholder parameters in prepared statements is
-database-specific. For example, comparing MySQL, PostgreSQL, and Oracle:
+プリペアードステートメントで使われるパラメータのプレースホルダの構文はデータベース固有のものです。例としてMySQLとPostgreSQLとOracleを比較しています。
 
 ::
 
@@ -144,5 +86,5 @@ database-specific. For example, comparing MySQL, PostgreSQL, and Oracle:
     WHERE col = ?       WHERE col = $1        WHERE col = :col
     VALUES(?, ?, ?)     VALUES($1, $2, $3)    VALUES(:val1, :val2, :val3)
 
-**Previous: `Modifying Data and Using Transactions <modifying.html>`__**
-**Next: `Handling Errors <errors.html>`__**
+| 前に戻る: `Modifying Data and Using Transactions <modifying.html>`_
+| 次に進む: `Handling Errors <errors.html>`_
