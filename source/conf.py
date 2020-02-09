@@ -36,7 +36,8 @@ source_parsers = {
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['pageinfo', 'sphinx.ext.todo', 'sphinx.ext.githubpages', 'sphinx.ext.mathjax']
+extensions = ['pageinfo', 'sphinx.ext.todo',
+              'sphinx.ext.githubpages', 'sphinx.ext.mathjax', 'sphinxcontrib.github_ribbon']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -79,3 +80,8 @@ html_sidebars = {
 
 # LaTeX の docclass 設定
 latex_docclass = {'manual': 'jsbook'}
+
+# -- Options for sphinxcontrib-githubribbon ----------------------------------
+github_ribbon_repo = 'd-tsuji/go-introduction-book'
+github_ribbon_position = 'right'
+github_ribbon_color = "gray"
