@@ -1,46 +1,19 @@
 ==================================
-The Connection Pool
+コネクションプール
 ==================================
 
 ----------------------------------
 
-There is a basic connection pool in the ``database/sql`` package. There
-isn't a lot of ability to control or inspect it, but here are some
-things you might find useful to know:
+``database/sql`` パッケージには基本的なコネクションプールがあります。制御したり検査したりするための多くの機能はありませんが、知っておくと便利なことがあります。
 
--  Connection pooling means that executing two consecutive statements on
-   a single database might open two connections and execute them
-   separately. It is fairly common for programmers to be confused as to
-   why their code misbehaves. For example, ``LOCK TABLES`` followed by
-   an ``INSERT`` can block because the ``INSERT`` is on a connection
-   that does not hold the table lock.
--  Connections are created when needed and there isn't a free connection
-   in the pool.
--  By default, there's no limit on the number of connections. If you try
-   to do a lot of things at once, you can create an arbitrary number of
-   connections. This can cause the database to return an error such as
-   "too many connections."
--  In Go 1.1 or newer, you can use ``db.SetMaxIdleConns(N)`` to limit
-   the number of *idle* connections in the pool. This doesn't limit the
-   pool size, though.
--  In Go 1.2.1 or newer, you can use ``db.SetMaxOpenConns(N)`` to limit
-   the number of *total* open connections to the database.
-   Unfortunately, a `deadlock
-   bug <https://groups.google.com/d/msg/golang-dev/jOTqHxI09ns/x79ajll-ab4J>`__
-   (`fix <https://code.google.com/p/go/source/detail?r=8a7ac002f840>`__)
-   prevents ``db.SetMaxOpenConns(N)`` from safely being used in 1.2.
--  Connections are recycled rather fast. Setting a high number of idle
-   connections with ``db.SetMaxIdleConns(N)`` can reduce this churn, and
-   help keep connections around for reuse.
--  Keeping a connection idle for a long time can cause problems (like in
-   `this issue <https://github.com/go-sql-driver/mysql/issues/257>`__
-   with MySQL on Microsoft Azure). Try ``db.SetMaxIdleConns(0)`` if you
-   get connection timeouts because a connection is idle for too long.
--  You can also specify the maximum amount of time a connection may be
-   reused by setting ``db.SetConnMaxLifetime(duration)`` since reusing
-   long lived connections may cause network issues. This closes the
-   unused connections lazily i.e. closing expired connection may be
-   deferred.
+- コネクションプーリングとは、単一のデータベースに2つの連続するステートメントを実行するときに、2つのコネクションが開かれ、独立して実行されることになります。プログラマにとって、コードが誤作動する理由に混乱することはよくあることです。例えば ``INSERT`` は テーブルへのロックを取得しないコネクション上にあるため ``LOCK TABLES`` に続いて ``INSERT`` をブロックできます。
+- コネクションは必要なときに生成され、プールには自由な(free)コネクションはありません。
+- デフォルトではコネクションの数に制限はありません。一度に多くのことをしようとすると任意の数のコネクションを生成することができます。ただしデータベースは "接続が多すぎます" などのエラーを返すことがあります。
+- Go1.1以降では、``db.SetMaxIdleConns(N)`` を使用して、プール内のアイドルコネクションの数を制限できます。ただし、これはプールサイズを制限しません。
+- Go1.2.1以降では、データベースへのOpenしている合計のコネクション数を制限するために ``db.SetMaxIdleConns(N)`` を使うことができます。残念なことに `デッドロックのバグ <https://groups.google.com/d/msg/golang-dev/jOTqHxI09ns/x79ajll-ab4J>`_ ( `修正済 <https://code.google.com/p/go/source/detail?r=8a7ac002f840>`_ ) により ``db.SetMaxOpenConns(N)`` が1.2では安全に使用できなくなります。
+- コネクションは非常に早く再利用されるようになります。``db.SetMaxIdleConns(N)`` でアイドルコネクション数を高い値にしておくことはリサイクルされるチェーンが減少し、再利用のためのコネクションを保持するようになります。
+- コネクションを長時間アイドル状態にしておくと問題が発生する場合があります。(`このような <https://github.com/go-sql-driver/mysql/issues/257>`_ Microsoft AzureのMySQLに関するものです。アイドル時間が長すぎることによってコネクションのタイムアウトが発生する場合、``db.SetMaxIdleConns(0)`` を試してみてください。
+- ``db.SetConnMaxLifetime(duration)`` を設定することにより、コネクションを再利用できる最大時間を指定できます。これは、長時間有効なコネクションを再利用するとネットワークの問題が発生する可能性があるためです。これにより、未使用のコネクションが遅延して閉じられます。つまり、有効期限が切れた接続を閉じることが延期される場合があります。
 
-**Previous: `Working with Unknown Columns <varcols.html>`__** **Next:
-`Surprises, Antipatterns and Limitations <surprises.html>`__**
+| 前に戻る: `Working with Unknown Columns <varcols.html>`_
+| 次に進む: `Surprises, Antipatterns and Limitations <surprises.html>`_
