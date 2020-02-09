@@ -43,6 +43,22 @@
 </div>
 <div class="admonition-todo admonition">
 <p class="admonition-title">課題</p>
+<p>直訳なので修正する</p>
+<p>There are a few places where error behavior is special-case, or there’s something additional you might need to know.
+エラーの動作が特殊な場合、あるいは知っておく必要のある追加事項がある場合がいくつかあります。</p>
+</div>
+<p class="todo-source">(<a class="reference internal" href="errors.html#id2"><em>元のエントリ</em></a> は、 /home/runner/work/go-database-sql-tutorial-ja/go-database-sql-tutorial-ja/source/errors.rst の 11 行目です)</p>
+<div class="admonition-todo admonition">
+<p class="admonition-title">課題</p>
+<p>訳が不自然</p>
+<p><code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> で返されるエラーは、すべてのデータベースの操作でエラーを捕捉してチェックするのが最善であるという、一般的な規則の唯一の例外です。
+The error returned by <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> is the only exception to the
+general rule that it's best to capture and check for errors in all
+database operations.</p>
+</div>
+<p class="todo-source">(<a class="reference internal" href="errors.html#id5"><em>元のエントリ</em></a> は、 /home/runner/work/go-database-sql-tutorial-ja/go-database-sql-tutorial-ja/source/errors.rst の 54 行目です)</p>
+<div class="admonition-todo admonition">
+<p class="admonition-title">課題</p>
 <p>訳がちょっとわからない。不自然になる。</p>
 <p>You could believe you're executing queries on a single connection,
 inside of a transaction, when in reality Go has created several
@@ -67,7 +83,7 @@ transaction.</p>
 <li class="toctree-l1"><a class="reference internal" href="retrieving.html">Retrieving Result Sets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modifying.html">Modifying Data and Using Transactions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="prepared.html">Using Prepared Statements</a></li>
-<li class="toctree-l1"><a class="reference internal" href="errors.html">Handling Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">エラーの扱い</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nulls.html">Working with NULLs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="varcols.html">Working with Unknown Columns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="connection-pool.html">The Connection Pool</a></li>

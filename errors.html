@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>Handling Errors &#8212; Go database/sql tutorial  ドキュメント</title>
+    <title>エラーの扱い &#8212; Go database/sql tutorial  ドキュメント</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -33,40 +33,34 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="handling-errors">
-<h1>Handling Errors<a class="headerlink" href="#handling-errors" title="このヘッドラインへのパーマリンク">¶</a></h1>
+  <div class="section" id="id1">
+<h1>エラーの扱い<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h1>
 <hr class="docutils" />
-<p>Almost all operations with <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> types return an error as the
-last value. You should always check these errors, never ignore them.</p>
-<p>There are a few places where error behavior is special-case, or there's
-something additional you might need to know.</p>
-<div class="section" id="errors-from-iterating-resultsets">
-<h2>Errors From Iterating Resultsets<a class="headerlink" href="#errors-from-iterating-resultsets" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>Consider the following code:</p>
-<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
-<span class="k">for</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Next</span><span class="p">()</span> <span class="p">{</span>
+<p><code class="docutils literal notranslate"><span class="pre">database/sql</span></code> を使ったほぼ全ての操作で、最後の値としてエラーを返します。常にエラーをチェックし、無視しないでください。</p>
+<p>エラーの動作が特殊な場合、あるいは知っておく必要のある追加事項がある場合がいくつかあります。</p>
+<div class="admonition-todo admonition" id="id2">
+<p class="admonition-title">課題</p>
+<p>直訳なので修正する</p>
+<p>There are a few places where error behavior is special-case, or there’s something additional you might need to know.
+エラーの動作が特殊な場合、あるいは知っておく必要のある追加事項がある場合がいくつかあります。</p>
+</div>
+<div class="section" id="id3">
+<h2>繰り返しのリザルトセットからのエラー<a class="headerlink" href="#id3" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>以下のコードについて考えてみましょう。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Next</span><span class="p">()</span> <span class="p">{</span>
     <span class="c1">// ...</span>
 <span class="p">}</span>
 <span class="k">if</span> <span class="nx">err</span> <span class="p">=</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Err</span><span class="p">();</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
     <span class="c1">// handle the error here</span>
 <span class="p">}</span>
-<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
 </pre></div>
 </div>
-<p>The error from <code class="docutils literal notranslate"><span class="pre">rows.Err()</span></code> could be the result of a variety of errors
-in the <code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code> loop. The loop might exit for some reason other
-than finishing the loop normally, so you always need to check whether
-the loop terminated normally or not. An abnormal termination
-automatically calls <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code>, although it's harmless to call it
-multiple times.</p>
+<p><code class="docutils literal notranslate"><span class="pre">rows.Err()</span></code> からのエラーは <code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code> のループ内での様々なエラーの結果である可能性があります。ループは、正常終了する以外に、様々な理由で終了する可能性があります。そのためループが正常終了したかどうかにかかわらず、常にエラーをチェックする必要があります。異常終了すると自動的に <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> が呼ばれますが、これは複数回読んでも悪い影響はありません。</p>
 </div>
-<div class="section" id="errors-from-closing-resultsets">
-<h2>Errors From Closing Resultsets<a class="headerlink" href="#errors-from-closing-resultsets" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>You should always explicitly close a <code class="docutils literal notranslate"><span class="pre">sql.Rows</span></code> if you exit the loop
-prematurely, as previously mentioned. It's auto-closed if the loop exits
-normally or through an error, but you might mistakenly do this:</p>
-<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
-<span class="k">for</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Next</span><span class="p">()</span> <span class="p">{</span>
+<div class="section" id="id4">
+<h2>リザルトセットを閉じるときのエラー<a class="headerlink" href="#id4" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>以前に説明したように、ループを途中で終了する場合は、明示的に <code class="docutils literal notranslate"><span class="pre">sql.Rows</span></code> を閉じる必要があります。ループが正常終了した場合や、エラーが発生した場合は自動的に閉じられますが、誤って以下のように行う場合があります。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Next</span><span class="p">()</span> <span class="p">{</span>
     <span class="c1">// ...</span>
     <span class="k">break</span><span class="p">;</span> <span class="c1">// whoops, rows is not closed! memory leak...</span>
 <span class="p">}</span>
@@ -76,43 +70,33 @@ normally or through an error, but you might mistakenly do this:</p>
     <span class="c1">// but what should we do if there&#39;s an error?</span>
     <span class="nx">log</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
 <span class="p">}</span>
-<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
 </pre></div>
 </div>
-<p>The error returned by <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> is the only exception to the
+<p><code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> で返されるエラーは、すべてのデータベースの操作でエラーを捕捉してチェックするのが最善であるという、一般的な規則の唯一の例外です。<code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> がエラーを返す場合、何をするべきであるかは不明です。エラーメッセージのロギングやpanicを起こすのが唯一できる賢明なことかもしれません。そうでない場合、エラーを無視する必要があるかもしれません。</p>
+<div class="admonition-todo admonition" id="id5">
+<p class="admonition-title">課題</p>
+<p>訳が不自然</p>
+<p><code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> で返されるエラーは、すべてのデータベースの操作でエラーを捕捉してチェックするのが最善であるという、一般的な規則の唯一の例外です。
+The error returned by <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> is the only exception to the
 general rule that it's best to capture and check for errors in all
-database operations. If <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> returns an error, it's unclear
-what you should do. Logging the error message or panicing might be the
-only sensible thing, and if that's not sensible, then perhaps you should
-just ignore the error.</p>
+database operations.</p>
 </div>
-<div class="section" id="errors-from-queryrow">
-<h2>Errors From QueryRow()<a class="headerlink" href="#errors-from-queryrow" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>Consider the following code to fetch a single row:</p>
-<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
-<span class="kd">var</span> <span class="nx">name</span> <span class="kt">string</span>
+</div>
+<div class="section" id="queryrow">
+<h2>QueryRow() からのエラー<a class="headerlink" href="#queryrow" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>単一の行をフェッチする以下のコードについて考えてみましょう。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kd">var</span> <span class="nx">name</span> <span class="kt">string</span>
 <span class="nx">err</span> <span class="p">=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">QueryRow</span><span class="p">(</span><span class="s">&quot;select name from users where id = ?&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">).</span><span class="nx">Scan</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>
 <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
     <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
 <span class="p">}</span>
 <span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>
-<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
 </pre></div>
 </div>
-<p>What if there was no user with <code class="docutils literal notranslate"><span class="pre">id</span> <span class="pre">=</span> <span class="pre">1</span></code>? Then there would be no row in
-the result, and <code class="docutils literal notranslate"><span class="pre">.Scan()</span></code> would not scan a value into <code class="docutils literal notranslate"><span class="pre">name</span></code>. What
-happens then?</p>
-<p>Go defines a special error constant, called <code class="docutils literal notranslate"><span class="pre">sql.ErrNoRows</span></code>, which is
-returned from <code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> when the result is empty. This needs to be
-handled as a special case in most circumstances. An empty result is
-often not considered an error by application code, and if you don't
-check whether an error is this special constant, you'll cause
-application-code errors you didn't expect.</p>
-<p>Errors from the query are deferred until <code class="docutils literal notranslate"><span class="pre">Scan()</span></code> is called, and then
-are returned from that. The above code is better written like this
-instead:</p>
-<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
-<span class="kd">var</span> <span class="nx">name</span> <span class="kt">string</span>
+<p>もし <code class="docutils literal notranslate"><span class="pre">id</span> <span class="pre">=</span> <span class="pre">1</span></code> であるユーザが存在しない場合はどうなりますか？その場合は結果の行がなく、 <code class="docutils literal notranslate"><span class="pre">Scan()</span></code> は <code class="docutils literal notranslate"><span class="pre">name</span></code> に何も読み込みません。何が起こるでしょうか。</p>
+<p>Gohは結果が空のときに <code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> から返される <code class="docutils literal notranslate"><span class="pre">sql.ErrNoRows</span></code> と呼ばれる特別なエラーを定義しています。ほとんどの場合、これは特別なケースとして扱う必要があります。空の結果はアプリケーションのエラーとして見なされないことが多く、エラーがこの特別なエラーであるかどうかを確認しないと、予期しないアプリケーションエラーを引き起こします。</p>
+<p>クエリからのエラーは <code class="docutils literal notranslate"><span class="pre">Scan()</span></code> が呼ばれるまで遅延され、呼ばれたら返されます。上記のコードは以下のように書きかえるほうが良いです。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kd">var</span> <span class="nx">name</span> <span class="kt">string</span>
 <span class="nx">err</span> <span class="p">=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">QueryRow</span><span class="p">(</span><span class="s">&quot;select name from users where id = ?&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">).</span><span class="nx">Scan</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>
 <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
     <span class="k">if</span> <span class="nx">err</span> <span class="o">==</span> <span class="nx">sql</span><span class="p">.</span><span class="nx">ErrNoRows</span> <span class="p">{</span>
@@ -122,88 +106,67 @@ instead:</p>
     <span class="p">}</span>
 <span class="p">}</span>
 <span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>
-<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
 </pre></div>
 </div>
-<p>One might ask why an empty result set is considered an error. There's
-nothing erroneous about an empty set. The reason is that the
-<code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> method needs to use this special-case in order to let the
-caller distinguish whether <code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> in fact found a row; without
-it, <code class="docutils literal notranslate"><span class="pre">Scan()</span></code> wouldn't do anything and you might not realize that your
-variable didn't get any value from the database after all.</p>
-<p>You should only run into this error when you're using <code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code>. If
-you encounter this error elsewhere, you're doing something wrong.</p>
+<div class="admonition note">
+<p class="admonition-title">注釈</p>
+<p>[訳注] Go1.13から <code class="docutils literal notranslate"><span class="pre">errors.Is</span></code> のメソッドが追加されているので、エラーが <code class="docutils literal notranslate"><span class="pre">sql.ErrNoRows</span></code> であるかどうかの判定は以下のように実装するのが良いでしょう。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="nx">errors</span><span class="p">.</span><span class="nx">Is</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">sql</span><span class="p">.</span><span class="nx">ErrNoRows</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">// there were no rows, but otherwise no error occurred</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
 </div>
-<div class="section" id="identifying-specific-database-errors">
-<h2>Identifying Specific Database Errors<a class="headerlink" href="#identifying-specific-database-errors" title="このヘッドラインへのパーマリンク">¶</a></h2>
+</div>
+<p>なぜ空の結果セットがエラーと見なされないのか疑問に思うかもしれません。空のセットについてエラーはありません。その理由は、<code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> メソッドは呼び出し元が <code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> が実際に行を見つけたか区別する必要があるため、この特殊なケースを使う必要があるためです。これがないと、<code class="docutils literal notranslate"><span class="pre">Scan()</span></code> は何も実行せず、変数がデータベースから値を取得できなかったことも気づかないかもしれません。</p>
+<p><code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> を使用している場合のみこのエラーが発生するでしょう。それ以外の場面でこのエラーが発生した場合、何が間違っていることをしているでしょう。</p>
+</div>
+<div class="section" id="id6">
+<h2>データベース固有のエラーの特定<a class="headerlink" href="#id6" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>次のようなコードを書きたくなるかもしれません。</p>
 <p>It can be tempting to write code like the following:</p>
-<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
-<span class="nx">rows</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">&quot;SELECT someval FROM sometable&quot;</span><span class="p">)</span>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">rows</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">&quot;SELECT someval FROM sometable&quot;</span><span class="p">)</span>
 <span class="c1">// err contains:</span>
 <span class="c1">// ERROR 1045 (28000): Access denied for user &#39;foo&#39;@&#39;::1&#39; (using password: NO)</span>
 <span class="k">if</span> <span class="nx">strings</span><span class="p">.</span><span class="nx">Contains</span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nx">Error</span><span class="p">(),</span> <span class="s">&quot;Access denied&quot;</span><span class="p">)</span> <span class="p">{</span>
     <span class="c1">// Handle the permission-denied error</span>
 <span class="p">}</span>
-<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
 </pre></div>
 </div>
-<p>This is not the best way to do it, though. For example, the string value
-might vary depending on what language the server uses to send error
-messages. It's much better to compare error numbers to identify what a
-specific error is.</p>
+<p>ただしこれは最善の方法ではありません。例えば、文字列の値はエラーメッセージを送信するときに使われるサーバの言語に依存します。エラー番号を比較して、特定のエラーが何であるか特定することをおすすめします。</p>
+<p>ただし、これは <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> パッケージそれ自体に含まれているわけではなく、ドライバーによって異なります。このチュートリアルが対象とするMySQLドライバーでは、次のコードを記述できます。</p>
 <p>The mechanism to do this varies between drivers, however, because this
 isn't part of <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> itself. In the MySQL driver that this
 tutorial focuses on, you could write the following code:</p>
-<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
-<span class="k">if</span> <span class="nx">driverErr</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">err</span><span class="p">.(</span><span class="o">*</span><span class="nx">mysql</span><span class="p">.</span><span class="nx">MySQLError</span><span class="p">);</span> <span class="nx">ok</span> <span class="p">{</span> <span class="c1">// Now the error number is accessible directly</span>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="nx">driverErr</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">err</span><span class="p">.(</span><span class="o">*</span><span class="nx">mysql</span><span class="p">.</span><span class="nx">MySQLError</span><span class="p">);</span> <span class="nx">ok</span> <span class="p">{</span> <span class="c1">// Now the error number is accessible directly</span>
     <span class="k">if</span> <span class="nx">driverErr</span><span class="p">.</span><span class="nx">Number</span> <span class="o">==</span> <span class="mi">1045</span> <span class="p">{</span>
         <span class="c1">// Handle the permission-denied error</span>
     <span class="p">}</span>
 <span class="p">}</span>
-<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
 </pre></div>
 </div>
-<p>Again, the <code class="docutils literal notranslate"><span class="pre">MySQLError</span></code> type here is provided by this specific driver,
-and the <code class="docutils literal notranslate"><span class="pre">.Number</span></code> field may differ between drivers. The value of the
-number, however, is taken from MySQL's error message, and is therefore
-database specific, not driver specific.</p>
-<p>This code is still ugly. Comparing to 1045, a magic number, is a code
-smell. Some drivers (though not the MySQL one, for reasons that are
-off-topic here) provide a list of error identifiers. The Postgres <code class="docutils literal notranslate"><span class="pre">pq</span></code>
-driver does, for example, in
-<a class="reference external" href="https://github.com/lib/pq/blob/master/error.go">error.go</a>. And
-there's an external package of <a class="reference external" href="https://github.com/VividCortex/mysqlerr">MySQL error numbers maintained by
-VividCortex</a>. Using such a
-list, the above code is better written thus:</p>
-<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
-<span class="k">if</span> <span class="nx">driverErr</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">err</span><span class="p">.(</span><span class="o">*</span><span class="nx">mysql</span><span class="p">.</span><span class="nx">MySQLError</span><span class="p">);</span> <span class="nx">ok</span> <span class="p">{</span>
+<p>繰り返しますが、ここでの <code class="docutils literal notranslate"><span class="pre">MySQLError</span></code> 型は特定のドライバーによって提供され、<code class="docutils literal notranslate"><span class="pre">.Number</span></code> フィールドはドライバーによって異なる場合があります。ただし、数値の値はMySQLのエラーメッセージから取得されるため、ドライバー固有ではなくデータベース固有です。</p>
+<p>このコードはまだ汚いです。1045 というマジックナンバーと比較しているためです。一部のドライバー(ここではトピックの範囲外であるため、MySQLのドライバーではありません)はエラーを区別する識別子のリストを提供しています。例えば Postgres の <code class="docutils literal notranslate"><span class="pre">pq</span></code> ドライバーでは <a class="reference external" href="https://github.com/lib/pq/blob/master/error.go">error.go</a> にエラーのリストがあります。VividCortexによって管理されているMySQLのエラー番号の一覧である <a class="reference external" href="https://github.com/VividCortex/mysqlerr">外部パッケージ</a> があります。このようなリストを用いると、上記のコードは次のように改善できます。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="nx">driverErr</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">err</span><span class="p">.(</span><span class="o">*</span><span class="nx">mysql</span><span class="p">.</span><span class="nx">MySQLError</span><span class="p">);</span> <span class="nx">ok</span> <span class="p">{</span>
     <span class="k">if</span> <span class="nx">driverErr</span><span class="p">.</span><span class="nx">Number</span> <span class="o">==</span> <span class="nx">mysqlerr</span><span class="p">.</span><span class="nx">ER_ACCESS_DENIED_ERROR</span> <span class="p">{</span>
         <span class="c1">// Handle the permission-denied error</span>
     <span class="p">}</span>
 <span class="p">}</span>
-<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
 </pre></div>
 </div>
 </div>
-<div class="section" id="handling-connection-errors">
-<h2>Handling Connection Errors<a class="headerlink" href="#handling-connection-errors" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>What if your connection to the database is dropped, killed, or has an
-error?</p>
-<p>You don't need to implement any logic to retry failed statements when
-this happens. As part of the <a class="reference external" href="connection-pool.html">connection
-pooling</a> in <code class="docutils literal notranslate"><span class="pre">database/sql</span></code>, handling failed
-connections is built-in. If you execute a query or other statement and
-the underlying connection has a failure, Go will reopen a new connection
-(or just get another from the connection pool) and retry, up to 10
-times.</p>
-<p>There can be some unintended consequences, however. Some types of errors
-may be retried when other error conditions happen. This might also be
-driver-specific. One example that has occurred with the MySQL driver is
-that using <code class="docutils literal notranslate"><span class="pre">KILL</span></code> to cancel an undesired statement (such as a
-long-running query) results in the statement being retried up to 10
-times.</p>
-<p><strong>Previous: `Using Prepared Statements &lt;prepared.html&gt;`__</strong> <strong>Next:
-`Working with NULLs &lt;nulls.html&gt;`__</strong></p>
+<div class="section" id="id8">
+<h2>コネクションエラーの扱い<a class="headerlink" href="#id8" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>データベースへの接続が切断、強制終了、またはエラーが発生した場合はどうなりますか？</p>
+<p>これが発生した場合は失敗したステートメントをリトライするロジックを実装する必要はありません。<code class="docutils literal notranslate"><span class="pre">database/sql</span></code> にある <a class="reference external" href="connection-pool.html">connection pooling</a> の一部として、失敗した接続の処理が組み込まれています。クエリや他のステートメントを実行し、コネクションに障害がある場合、Goは新しいコネクションを再度Openします。あるいはコネクションプールから別のコネクションを取得します。最大10回再試行します。</p>
+<p>ただし、意図しない結果が生じる可能性があります。 他のエラー状態が発生すると、一部のタイプのエラーが再試行される場合があります。 これはドライバー固有の場合もあります。 MySQLドライバーで発生した1つの例は、 <code class="docutils literal notranslate"><span class="pre">KILL</span></code> を使用して望ましくないステートメント(長時間実行されるクエリなど)をキャンセルすると、ステートメントが最大10回再試行されることです。</p>
+<div class="line-block">
+<div class="line">前に戻る: <a class="reference external" href="prepared.html">Using Prepared Statements</a></div>
+<div class="line">次に進む: <a class="reference external" href="nulls.html">Working with NULLs</a></div>
+</div>
 </div>
 </div>
 
@@ -222,7 +185,7 @@ times.</p>
 <li class="toctree-l1"><a class="reference internal" href="retrieving.html">Retrieving Result Sets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modifying.html">Modifying Data and Using Transactions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="prepared.html">Using Prepared Statements</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Handling Errors</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">エラーの扱い</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nulls.html">Working with NULLs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="varcols.html">Working with Unknown Columns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="connection-pool.html">The Connection Pool</a></li>
