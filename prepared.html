@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>プリペアードステートメントの扱い &#8212; Go database/sql tutorial  ドキュメント</title>
+    <title>プリペアードステートメント &#8212; Go database/sql tutorial  ドキュメント</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -34,7 +34,8 @@
           <div class="body" role="main">
             
   <div class="section" id="id1">
-<h1>プリペアードステートメントの扱い<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<h1>プリペアードステートメント<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<hr class="docutils" />
 <p>Goのプリペアードステートメントは、よく知られた利点(セキュリティ、効率性、利便性)はすべてあります。ただし、それらの実装方法は、特に <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> の内部のやり取りに関して、よく知られているものとは少し異なるかもしれません。</p>
 <div class="section" id="id2">
 <h2>プリペアードステートメントとコネクション<a class="headerlink" href="#id2" title="このヘッドラインへのパーマリンク">¶</a></h2>
@@ -125,7 +126,7 @@ VALUES(?, ?, ?)     VALUES($1, $2, $3)    VALUES(:val1, :val2, :val3)
 <li class="toctree-l1"><a class="reference internal" href="accessing.html">データベースへのアクセス</a></li>
 <li class="toctree-l1"><a class="reference internal" href="retrieving.html">リザルトセットの取得</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modifying.html">トランザクションを使ったデータの変更</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">プリペアードステートメントの扱い</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">プリペアードステートメント</a></li>
 <li class="toctree-l1"><a class="reference internal" href="errors.html">エラーの扱い</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nulls.html">NULLの使用</a></li>
 <li class="toctree-l1"><a class="reference internal" href="varcols.html">不明な列の操作</a></li>
