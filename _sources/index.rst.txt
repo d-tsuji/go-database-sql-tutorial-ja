@@ -28,4 +28,8 @@ GoでSQLやSQL-likeなデータベースを使うよく知られた方法は `da
     surprises
     references
 
-.. todolist::
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+    
+    todo

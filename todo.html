@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>概要 &#8212; Go database/sql tutorial  ドキュメント</title>
+    <title>TODO(内部用) &#8212; Go database/sql tutorial  ドキュメント</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -15,8 +15,7 @@
     <script src="_static/translations.js"></script>
     <link rel="index" title="索引" href="genindex.html" />
     <link rel="search" title="検索" href="search.html" />
-    <link rel="next" title="データベースドライバのインポート" href="importing.html" />
-    <link rel="prev" title="Go database/sql tutorial" href="index.html" />
+    <link rel="prev" title="関連資料" href="references.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -33,19 +32,39 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="id1">
-<h1>概要<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h1>
-<hr class="docutils" />
-<p>Goでデータベースにアクセスするためには <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> を使います。この型を用いて、ステートメントやトランザクションの生成、クエリの実行や結果のフェッチをすることできます。</p>
-<p>まず最初に知っておくべきこととして <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> はデータベース接続ではないことです。また特定のデータベースソフトウェアの &quot;データベース&quot; や &quot;スキーマ&quot; の概念には対応していません。ネットワーク接続やインメモリ、プロセスを通じてアクセスされる様々なローカルファイルへのインターフェースと、データベースの存在を抽象化します。</p>
-<p><code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> はバックグラウンドでいくつかの重要なタスクを実行します。</p>
-<ul class="simple">
-<li><p>ドライバーを介して、実際に存在するデータベースへの接続をOpenやClose</p></li>
-<li><p>必要に応じて様々な接続へのコネクションプーリングの管理</p></li>
-</ul>
-<p><code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> の抽象化はデータベースへの同時アクセスを管理する方法について心配する必要がないように設計されています。タスクを実行するとコネクションは使用中としてマークされます。使用されなくなったときには使用可能なコネクションとしてプールに戻ります。これは、コネクションをプールに戻すことに失敗すると、<code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> は大量のコネクションをOpenすることになります。接続が多すぎます、開いているファイルハンドラが多すぎます、空いているネットワークポートがありません、などといったリソース不足をもたらします。これについては後ほど詳しく説明します。</p>
-<p><code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> を生成したら、データベースへクエリを発行したり、ステートメントやトランザクションを生成することができます。</p>
-<p>次に進みます: <a class="reference external" href="importing.html">Importing a Database Driver</a></p>
+  <div class="section" id="todo">
+<h1>TODO(内部用)<a class="headerlink" href="#todo" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p>内部的なTODOです。</p>
+<div class="admonition-todo admonition">
+<p class="admonition-title">課題</p>
+<p>直訳なので修正する</p>
+<p>There are a few places where error behavior is special-case, or there’s something additional you might need to know.
+エラーの動作が特殊な場合、あるいは知っておく必要のある追加事項がある場合がいくつかあります。</p>
+</div>
+<p class="todo-source">(<a class="reference internal" href="errors.html#id2"><em>元のエントリ</em></a> は、 /home/runner/work/go-database-sql-tutorial-ja/go-database-sql-tutorial-ja/source/errors.rst の 11 行目です)</p>
+<div class="admonition-todo admonition">
+<p class="admonition-title">課題</p>
+<p>訳が不自然</p>
+<p><code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> で返されるエラーは、すべてのデータベースの操作でエラーを捕捉してチェックするのが最善であるという、一般的な規則の唯一の例外です。
+The error returned by <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> is the only exception to the
+general rule that it's best to capture and check for errors in all
+database operations.</p>
+</div>
+<p class="todo-source">(<a class="reference internal" href="errors.html#id5"><em>元のエントリ</em></a> は、 /home/runner/work/go-database-sql-tutorial-ja/go-database-sql-tutorial-ja/source/errors.rst の 54 行目です)</p>
+<div class="admonition-todo admonition">
+<p class="admonition-title">課題</p>
+<p>訳がちょっとわからない。不自然になる。</p>
+<p>You could believe you're executing queries on a single connection,
+inside of a transaction, when in reality Go has created several
+connections for you invisibly and some statements aren't part of the
+transaction.</p>
+</div>
+<p class="todo-source">(<a class="reference internal" href="modifying.html#id4"><em>元のエントリ</em></a> は、 /home/runner/work/go-database-sql-tutorial-ja/go-database-sql-tutorial-ja/source/modifying.rst の 65 行目です)</p>
+<div class="admonition-todo admonition">
+<p class="admonition-title">課題</p>
+<p>全体的に見直す</p>
+</div>
+<p class="todo-source">(<a class="reference internal" href="surprises.html#id11"><em>元のエントリ</em></a> は、 /home/runner/work/go-database-sql-tutorial-ja/go-database-sql-tutorial-ja/source/surprises.rst の 104 行目です)</p>
 </div>
 
 
@@ -56,8 +75,8 @@
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper"><div id="toc" class="sidebarRow">
     <h5><a href="/">GO DATABASE/SQL TUTORIAL</a></h5>
-    <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">概要</a></li>
+    <ul>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">概要</a></li>
 <li class="toctree-l1"><a class="reference internal" href="importing.html">データベースドライバのインポート</a></li>
 <li class="toctree-l1"><a class="reference internal" href="accessing.html">データベースへのアクセス</a></li>
 <li class="toctree-l1"><a class="reference internal" href="retrieving.html">リザルトセットの取得</a></li>
@@ -70,8 +89,8 @@
 <li class="toctree-l1"><a class="reference internal" href="surprises.html">驚き/アンチパターン/制限</a></li>
 <li class="toctree-l1"><a class="reference internal" href="references.html">関連資料</a></li>
 </ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="todo.html">TODO(内部用)</a></li>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">TODO(内部用)</a></li>
 </ul>
 
     
@@ -99,7 +118,7 @@
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
-      <a href="_sources/overview.rst.txt"
+      <a href="_sources/todo.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 

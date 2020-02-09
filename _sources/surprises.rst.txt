@@ -1,149 +1,93 @@
 ========================================
-Surprises, Antipatterns and Limitations
+驚き/アンチパターン/制限
 ========================================
 
-Although ``database/sql`` is simple once you're accustomed to it, you
-might be surprised by the subtlety of use cases it supports. This is
-common to Go's core libraries.
+---------------------------------
 
-Resource Exhaustion
+``database/sql`` は慣れれば簡単ですが、サポートするユースケースの微妙さに驚くかもしれません。これはGoのコアライブラリに共通です。
+
+リソースの枯渇
 ===================
 
-As mentioned throughout this site, if you don't use ``database/sql`` as
-intended, you can certainly cause trouble for yourself, usually by
-consuming some resources or preventing them from being reused
-effectively:
+このサイト全体で言及したように、意図したとおりに ``database/sql`` を使用しない場合、通常はリソースを消費するか、リソースの効果的な再利用を妨げることにより、問題を引き起こす可能性があります。
 
--  Opening and closing databases can cause exhaustion of resources.
--  Failing to read all rows or use ``rows.Close()`` reserves connections
-   from the pool.
--  Using ``Query()`` for a statement that doesn't return rows will
-   reserve a connection from the pool.
--  Failing to be aware of how `prepared statements <prepared.html>`__
-   work can lead to a lot of extra database activity.
+- データベースを開いたり閉じたりすると、リソースが枯渇する可能性があります。
+- すべての行を読み取らないか ``rows.Close()`` を使用しないと、プールからの接続が確保されたままになります。
+- 行を返さないステートメントに ``Query`` を使用すると、プールからの接続が確保されたままになります。
+- `プリペアードステートメント<prepared.html>`_ がどのように動作するかを認識しないと、多くの余分なデータベースアクティビティが発生する可能性があります。
 
-Large uint64 Values
+大きな uint64 値
 ===================
 
-Here's a surprising error. You can't pass big unsigned integers as
-parameters to statements if their high bit is set:
+これは驚くべきエラーです。大きなビットが設定されている場合、ステートメントに大きな符号なし整数をパラメーターとして渡すことはできません。
 
 .. code-block:: go
 
-   <pre class="prettyprint lang-go">
    _, err := db.Exec("INSERT INTO users(id) VALUES", math.MaxUint64) // Error
-   </pre>
 
-This will throw an error. Be careful if you use ``uint64`` values, as
-they may start out small and work without error, but increment over time
-and start throwing errors.
+これはエラーをスローします。 ``uint64`` 値を使用する場合は注意してください。小さな値から始まり、エラーなしで機能しますが、時間の経過とともに増分してエラーをスローし始める可能性があります。
 
-Connection State Mismatch
-=========================
+コネクション状態の不一致
+=============================
 
-Some things can change connection state, and that can cause problems for
-two reasons:
+コネクションの状態を変更できるいくつかの操作がありますが、それは次の2つの理由で問題を引き起こす可能性があります。
 
-1. Some connection state, such as whether you're in a transaction,
-   should be handled through the Go types instead.
-2. You might be assuming that your queries run on a single connection
-   when they don't.
+#. トランザクション内かどうかなどの、一部のコネクションの状態は、Goの型を介して処理する必要があります。
+#. クエリが実行されていないときに、クエリが単一の接続で実行されると仮定している場合があります。
 
-For example, setting the current database with a ``USE`` statement is a
-typical thing for many people to do. But in Go, it will affect only the
-connection that you run it in. Unless you are in a transaction, other
-statements that you think are executed on that connection may actually
-run on different connections gotten from the pool, so they won't see the
-effects of such changes.
+たとえば、``USE`` ステートメントを使用して現在のデータベースを設定することは、一般的なことです。 ただし、Goでは、実行中の接続のみに影響します。トランザクション中でない限り、その接続で実行されると思われる他のステートメントは、プールから取得した異なる接続で実際に実行される可能性があるため、そのような変更の影響は見られません。
 
-Additionally, after you've changed the connection, it'll return to the
-pool and potentially pollute the state for some other code. This is one
-of the reasons why you should never issue BEGIN or COMMIT statements as
-SQL commands directly, too.
+また、接続を変更すると、プールに戻り、他のコードの状態を潜在的に汚染します。これは ``BEGIN`` または ``COMMIT`` ステートメントをSQLコマンドとして直接発行しないでください理由の1つです。
 
-Database-Specific Syntax
+データベース固有の構文
 ========================
 
-The ``database/sql`` API provides an abstraction of a row-oriented
-database, but specific databases and drivers can differ in behavior
-and/or syntax, such as `prepared statement
-placeholders <prepared.html>`__.
+``database/sql`` のAPIは行指向データベースの抽象化を提供しますが、特定のデータベースとドライバーは、`プリペアドステートメントのプレースホルダー <prepared.html>`_ などの動作や構文が異なる場合があります。
 
-Multiple Result Sets
-====================
+複数のリザルトセット
+=======================
 
-The Go driver doesn't support multiple result sets from a single query
-in any way, and there doesn't seem to be any plan to do that, although
-there is `a feature
-request <https://github.com/golang/go/issues/5171>`__ for supporting
-bulk operations such as bulk copy.
+Goドライバーは、単一のクエリからの複数のリザルトセットをサポートしていません。バルクコピーなどのバルク操作をサポートするための `機能要求 <https://github.com/golang/go/issues/5171>`_ はありますが、それを行う計画はないようです。
 
-This means, among other things, that a stored procedure that returns
-multiple result sets will not work correctly.
+これは、特に、複数のリザルトセットを返すストアドプロシージャが正しく機能しないことを意味します。
 
-Invoking Stored Procedures
-==========================
+ストアドプロシージャの呼び出し
+=====================================
 
-Invoking stored procedures is driver-specific, but in the MySQL driver
-it can't be done at present. It might seem that you'd be able to call a
-simple procedure that returns a single result set, by executing
-something like this:
+ストアドプロシージャの呼び出しはドライバー固有ですが、MySQLドライバーでは現在実行できません。 次のようなものを実行することで、単一のリザルトセットを返す簡単なプロシージャを呼び出すことができるように思えるかもしれません。
 
 .. code-block:: go
 
-   <pre class="prettyprint lang-go">
    err := db.QueryRow("CALL mydb.myprocedure").Scan(result) // Error
-   </pre>
 
-In fact, this won't work. You'll get the following error: *Error 1312:
-PROCEDURE mydb.myprocedure can't return a result set in the given
-context*. This is because MySQL expects the connection to be set into
-multi-statement mode, even for a single result, and the driver doesn't
-currently do that (though see `this
-issue <https://github.com/go-sql-driver/mysql/issues/66>`__).
+実際、これは機能しません。 次のエラーが表示されます。 *エラー1312* ：プロシージャmydb.myprocedureは、指定されたコンテキストでリザルトセットを返すことができません。 これは、MySQLは、単一の結果であっても、接続がマルチステートメントモードに設定されることを期待しており、ドライバーが現在それを行っていないためです(`この問題 <https://github.com/go-sql-driver/mysql/issues/66>`_ を参照)。
 
-Multiple Statement Support
-==========================
+複数ステートメントのサポート
+==============================
 
-The ``database/sql`` doesn't explicitly have multiple statement support,
-which means that the behavior of this is backend dependent:
+``database/sql`` は複数のステートメントを明示的にサポートしていません。つまり、この動作はバックエンドに依存しています。
 
 .. code-block:: go
 
-   <pre class="prettyprint lang-go">
    _, err := db.Exec("DELETE FROM tbl1; DELETE FROM tbl2") // Error/unpredictable result
-   </pre>
 
-The server is allowed to interpret this however it wants, which can
-include returning an error, executing only the first statement, or
-executing both.
+サーバーは、これを必要に応じて解釈できます。これには、エラーを返す、最初のステートメントのみを実行する、または両方を実行することが含まれます。
 
-Similarly, there is no way to batch statements in a transaction. Each
-statement in a transaction must be executed serially, and the resources
-in the results, such as a Row or Rows, must be scanned or closed so the
-underlying connection is free for the next statement to use. This
-differs from the usual behavior when you're not working with a
-transaction. In that scenario, it is perfectly possible to execute a
-query, loop over the rows, and within the loop make a query to the
-database (which will happen on a new connection):
+同様に、トランザクション内のステートメントをバッチ処理する方法はありません。 トランザクション内の各ステートメントはシリアルで実行する必要があり、単一の行や複数の行などの結果のリソースをスキャンまたは閉じる必要があります。そのため、コネクションは次のステートメントで使用できます。 これは、トランザクションを処理していないときの通常の動作とは異なります。 そのシナリオでは、クエリを実行し、行をループし、ループ内でデータベースへのクエリを作成することが完全に可能です（新しいコネクションで発生します）。
 
 .. code-block:: go
 
-   <pre class="prettyprint lang-go">
    rows, err := db.Query("select * from tbl1") // Uses connection 1
    for rows.Next() {
        err = rows.Scan(&myvariable)
        // The following line will NOT use connection 1, which is already in-use
        db.Query("select * from tbl2 where id = ?", myvariable)
    }
-   </pre>
 
-But transactions are bound to just one connection, so this isn't
-possible with a transaction:
+ただし、トランザクションは1つのコネクションのみにバインドされるため、トランザクションではこれは不可能です。
 
 .. code-block:: go
 
-   <pre class="prettyprint lang-go">
    tx, err := db.Begin()
    rows, err := tx.Query("select * from tbl1") // Uses tx's connection
    for rows.Next() {
@@ -151,13 +95,10 @@ possible with a transaction:
        // ERROR! tx's connection is already busy!
        tx.Query("select * from tbl2 where id = ?", myvariable)
    }
-   </pre>
 
-Go doesn't stop you from trying, though. For that reason, you may wind
-up with a corrupted connection if you attempt to perform another
-statement before the first has released its resources and cleaned up
-after itself. This also means that each statement in a transaction
-results in a separate set of network round-trips to the database.
+ただし、Goを試してみることはできません。 そのため、最初のステートメントがリソースを解放してからクリーンアップする前に別のステートメントを実行しようとすると、コネクションが破損する可能性があります。 これは、トランザクション内の各ステートメントが、データベースへのネットワークラウンドトリップの個別のセットをもたらすことも意味します。
 
-**Previous: `The Connection Pool <connection-pool.html>`__** **Next:
-`Related Reading and Resources <references.html>`__**
+| 前に戻る: `The Connection Pool <connection-pool.html>`_
+| 次に進む: `Related Reading and Resources <references.html>`_
+
+.. todo:: 全体的に見直す

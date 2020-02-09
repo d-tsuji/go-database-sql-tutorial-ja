@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>Surprises, Antipatterns and Limitations &#8212; Go database/sql tutorial  ドキュメント</title>
+    <title>驚き/アンチパターン/制限 &#8212; Go database/sql tutorial  ドキュメント</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -33,146 +33,90 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="surprises-antipatterns-and-limitations">
-<h1>Surprises, Antipatterns and Limitations<a class="headerlink" href="#surprises-antipatterns-and-limitations" title="このヘッドラインへのパーマリンク">¶</a></h1>
-<p>Although <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> is simple once you're accustomed to it, you
-might be surprised by the subtlety of use cases it supports. This is
-common to Go's core libraries.</p>
-<div class="section" id="resource-exhaustion">
-<h2>Resource Exhaustion<a class="headerlink" href="#resource-exhaustion" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>As mentioned throughout this site, if you don't use <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> as
-intended, you can certainly cause trouble for yourself, usually by
-consuming some resources or preventing them from being reused
-effectively:</p>
+  <div class="section" id="id1">
+<h1>驚き/アンチパターン/制限<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<hr class="docutils" />
+<p><code class="docutils literal notranslate"><span class="pre">database/sql</span></code> は慣れれば簡単ですが、サポートするユースケースの微妙さに驚くかもしれません。これはGoのコアライブラリに共通です。</p>
+<div class="section" id="id2">
+<h2>リソースの枯渇<a class="headerlink" href="#id2" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>このサイト全体で言及したように、意図したとおりに <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> を使用しない場合、通常はリソースを消費するか、リソースの効果的な再利用を妨げることにより、問題を引き起こす可能性があります。</p>
 <ul class="simple">
-<li><p>Opening and closing databases can cause exhaustion of resources.</p></li>
-<li><p>Failing to read all rows or use <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> reserves connections
-from the pool.</p></li>
-<li><p>Using <code class="docutils literal notranslate"><span class="pre">Query()</span></code> for a statement that doesn't return rows will
-reserve a connection from the pool.</p></li>
-<li><p>Failing to be aware of how <a class="reference external" href="prepared.html">prepared statements</a>
-work can lead to a lot of extra database activity.</p></li>
+<li><p>データベースを開いたり閉じたりすると、リソースが枯渇する可能性があります。</p></li>
+<li><p>すべての行を読み取らないか <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> を使用しないと、プールからの接続が確保されたままになります。</p></li>
+<li><p>行を返さないステートメントに <code class="docutils literal notranslate"><span class="pre">Query</span></code> を使用すると、プールからの接続が確保されたままになります。</p></li>
+<li><p><a href="#id12"><span class="problematic" id="id13">`プリペアードステートメント&lt;prepared.html&gt;`_</span></a> がどのように動作するかを認識しないと、多くの余分なデータベースアクティビティが発生する可能性があります。</p></li>
 </ul>
 </div>
-<div class="section" id="large-uint64-values">
-<h2>Large uint64 Values<a class="headerlink" href="#large-uint64-values" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>Here's a surprising error. You can't pass big unsigned integers as
-parameters to statements if their high bit is set:</p>
-<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
-<span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Exec</span><span class="p">(</span><span class="s">&quot;INSERT INTO users(id) VALUES&quot;</span><span class="p">,</span> <span class="nx">math</span><span class="p">.</span><span class="nx">MaxUint64</span><span class="p">)</span> <span class="c1">// Error</span>
-<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
+<div class="section" id="uint64">
+<h2>大きな uint64 値<a class="headerlink" href="#uint64" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>これは驚くべきエラーです。大きなビットが設定されている場合、ステートメントに大きな符号なし整数をパラメーターとして渡すことはできません。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Exec</span><span class="p">(</span><span class="s">&quot;INSERT INTO users(id) VALUES&quot;</span><span class="p">,</span> <span class="nx">math</span><span class="p">.</span><span class="nx">MaxUint64</span><span class="p">)</span> <span class="c1">// Error</span>
 </pre></div>
 </div>
-<p>This will throw an error. Be careful if you use <code class="docutils literal notranslate"><span class="pre">uint64</span></code> values, as
-they may start out small and work without error, but increment over time
-and start throwing errors.</p>
+<p>これはエラーをスローします。 <code class="docutils literal notranslate"><span class="pre">uint64</span></code> 値を使用する場合は注意してください。小さな値から始まり、エラーなしで機能しますが、時間の経過とともに増分してエラーをスローし始める可能性があります。</p>
 </div>
-<div class="section" id="connection-state-mismatch">
-<h2>Connection State Mismatch<a class="headerlink" href="#connection-state-mismatch" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>Some things can change connection state, and that can cause problems for
-two reasons:</p>
+<div class="section" id="id3">
+<h2>コネクション状態の不一致<a class="headerlink" href="#id3" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>コネクションの状態を変更できるいくつかの操作がありますが、それは次の2つの理由で問題を引き起こす可能性があります。</p>
 <ol class="arabic simple">
-<li><p>Some connection state, such as whether you're in a transaction,
-should be handled through the Go types instead.</p></li>
-<li><p>You might be assuming that your queries run on a single connection
-when they don't.</p></li>
+<li><p>トランザクション内かどうかなどの、一部のコネクションの状態は、Goの型を介して処理する必要があります。</p></li>
+<li><p>クエリが実行されていないときに、クエリが単一の接続で実行されると仮定している場合があります。</p></li>
 </ol>
-<p>For example, setting the current database with a <code class="docutils literal notranslate"><span class="pre">USE</span></code> statement is a
-typical thing for many people to do. But in Go, it will affect only the
-connection that you run it in. Unless you are in a transaction, other
-statements that you think are executed on that connection may actually
-run on different connections gotten from the pool, so they won't see the
-effects of such changes.</p>
-<p>Additionally, after you've changed the connection, it'll return to the
-pool and potentially pollute the state for some other code. This is one
-of the reasons why you should never issue BEGIN or COMMIT statements as
-SQL commands directly, too.</p>
+<p>たとえば、<code class="docutils literal notranslate"><span class="pre">USE</span></code> ステートメントを使用して現在のデータベースを設定することは、一般的なことです。 ただし、Goでは、実行中の接続のみに影響します。トランザクション中でない限り、その接続で実行されると思われる他のステートメントは、プールから取得した異なる接続で実際に実行される可能性があるため、そのような変更の影響は見られません。</p>
+<p>また、接続を変更すると、プールに戻り、他のコードの状態を潜在的に汚染します。これは <code class="docutils literal notranslate"><span class="pre">BEGIN</span></code> または <code class="docutils literal notranslate"><span class="pre">COMMIT</span></code> ステートメントをSQLコマンドとして直接発行しないでください理由の1つです。</p>
 </div>
-<div class="section" id="database-specific-syntax">
-<h2>Database-Specific Syntax<a class="headerlink" href="#database-specific-syntax" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>The <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> API provides an abstraction of a row-oriented
-database, but specific databases and drivers can differ in behavior
-and/or syntax, such as <a class="reference external" href="prepared.html">prepared statement
-placeholders</a>.</p>
+<div class="section" id="id4">
+<h2>データベース固有の構文<a class="headerlink" href="#id4" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">database/sql</span></code> のAPIは行指向データベースの抽象化を提供しますが、特定のデータベースとドライバーは、<a class="reference external" href="prepared.html">プリペアドステートメントのプレースホルダー</a> などの動作や構文が異なる場合があります。</p>
 </div>
-<div class="section" id="multiple-result-sets">
-<h2>Multiple Result Sets<a class="headerlink" href="#multiple-result-sets" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>The Go driver doesn't support multiple result sets from a single query
-in any way, and there doesn't seem to be any plan to do that, although
-there is <a class="reference external" href="https://github.com/golang/go/issues/5171">a feature
-request</a> for supporting
-bulk operations such as bulk copy.</p>
-<p>This means, among other things, that a stored procedure that returns
-multiple result sets will not work correctly.</p>
+<div class="section" id="id6">
+<h2>複数のリザルトセット<a class="headerlink" href="#id6" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>Goドライバーは、単一のクエリからの複数のリザルトセットをサポートしていません。バルクコピーなどのバルク操作をサポートするための <a class="reference external" href="https://github.com/golang/go/issues/5171">機能要求</a> はありますが、それを行う計画はないようです。</p>
+<p>これは、特に、複数のリザルトセットを返すストアドプロシージャが正しく機能しないことを意味します。</p>
 </div>
-<div class="section" id="invoking-stored-procedures">
-<h2>Invoking Stored Procedures<a class="headerlink" href="#invoking-stored-procedures" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>Invoking stored procedures is driver-specific, but in the MySQL driver
-it can't be done at present. It might seem that you'd be able to call a
-simple procedure that returns a single result set, by executing
-something like this:</p>
-<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
-<span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">QueryRow</span><span class="p">(</span><span class="s">&quot;CALL mydb.myprocedure&quot;</span><span class="p">).</span><span class="nx">Scan</span><span class="p">(</span><span class="nx">result</span><span class="p">)</span> <span class="c1">// Error</span>
-<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
+<div class="section" id="id8">
+<h2>ストアドプロシージャの呼び出し<a class="headerlink" href="#id8" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>ストアドプロシージャの呼び出しはドライバー固有ですが、MySQLドライバーでは現在実行できません。 次のようなものを実行することで、単一のリザルトセットを返す簡単なプロシージャを呼び出すことができるように思えるかもしれません。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">QueryRow</span><span class="p">(</span><span class="s">&quot;CALL mydb.myprocedure&quot;</span><span class="p">).</span><span class="nx">Scan</span><span class="p">(</span><span class="nx">result</span><span class="p">)</span> <span class="c1">// Error</span>
 </pre></div>
 </div>
-<p>In fact, this won't work. You'll get the following error: <em>Error 1312:
-PROCEDURE mydb.myprocedure can't return a result set in the given
-context</em>. This is because MySQL expects the connection to be set into
-multi-statement mode, even for a single result, and the driver doesn't
-currently do that (though see <a class="reference external" href="https://github.com/go-sql-driver/mysql/issues/66">this
-issue</a>).</p>
+<p>実際、これは機能しません。 次のエラーが表示されます。 <em>エラー1312</em> ：プロシージャmydb.myprocedureは、指定されたコンテキストでリザルトセットを返すことができません。 これは、MySQLは、単一の結果であっても、接続がマルチステートメントモードに設定されることを期待しており、ドライバーが現在それを行っていないためです(<a class="reference external" href="https://github.com/go-sql-driver/mysql/issues/66">この問題</a> を参照)。</p>
 </div>
-<div class="section" id="multiple-statement-support">
-<h2>Multiple Statement Support<a class="headerlink" href="#multiple-statement-support" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>The <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> doesn't explicitly have multiple statement support,
-which means that the behavior of this is backend dependent:</p>
-<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
-<span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Exec</span><span class="p">(</span><span class="s">&quot;DELETE FROM tbl1; DELETE FROM tbl2&quot;</span><span class="p">)</span> <span class="c1">// Error/unpredictable result</span>
-<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
+<div class="section" id="id10">
+<h2>複数ステートメントのサポート<a class="headerlink" href="#id10" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">database/sql</span></code> は複数のステートメントを明示的にサポートしていません。つまり、この動作はバックエンドに依存しています。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Exec</span><span class="p">(</span><span class="s">&quot;DELETE FROM tbl1; DELETE FROM tbl2&quot;</span><span class="p">)</span> <span class="c1">// Error/unpredictable result</span>
 </pre></div>
 </div>
-<p>The server is allowed to interpret this however it wants, which can
-include returning an error, executing only the first statement, or
-executing both.</p>
-<p>Similarly, there is no way to batch statements in a transaction. Each
-statement in a transaction must be executed serially, and the resources
-in the results, such as a Row or Rows, must be scanned or closed so the
-underlying connection is free for the next statement to use. This
-differs from the usual behavior when you're not working with a
-transaction. In that scenario, it is perfectly possible to execute a
-query, loop over the rows, and within the loop make a query to the
-database (which will happen on a new connection):</p>
-<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
-<span class="nx">rows</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">&quot;select * from tbl1&quot;</span><span class="p">)</span> <span class="c1">// Uses connection 1</span>
+<p>サーバーは、これを必要に応じて解釈できます。これには、エラーを返す、最初のステートメントのみを実行する、または両方を実行することが含まれます。</p>
+<p>同様に、トランザクション内のステートメントをバッチ処理する方法はありません。 トランザクション内の各ステートメントはシリアルで実行する必要があり、単一の行や複数の行などの結果のリソースをスキャンまたは閉じる必要があります。そのため、コネクションは次のステートメントで使用できます。 これは、トランザクションを処理していないときの通常の動作とは異なります。 そのシナリオでは、クエリを実行し、行をループし、ループ内でデータベースへのクエリを作成することが完全に可能です（新しいコネクションで発生します）。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">rows</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">&quot;select * from tbl1&quot;</span><span class="p">)</span> <span class="c1">// Uses connection 1</span>
 <span class="k">for</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Next</span><span class="p">()</span> <span class="p">{</span>
     <span class="nx">err</span> <span class="p">=</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Scan</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">myvariable</span><span class="p">)</span>
     <span class="c1">// The following line will NOT use connection 1, which is already in-use</span>
     <span class="nx">db</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">&quot;select * from tbl2 where id = ?&quot;</span><span class="p">,</span> <span class="nx">myvariable</span><span class="p">)</span>
 <span class="p">}</span>
-<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
 </pre></div>
 </div>
-<p>But transactions are bound to just one connection, so this isn't
-possible with a transaction:</p>
-<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nx">pre</span> <span class="nx">class</span><span class="p">=</span><span class="s">&quot;prettyprint lang-go&quot;</span><span class="p">&gt;</span>
-<span class="nx">tx</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Begin</span><span class="p">()</span>
+<p>ただし、トランザクションは1つのコネクションのみにバインドされるため、トランザクションではこれは不可能です。</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">tx</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Begin</span><span class="p">()</span>
 <span class="nx">rows</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">tx</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">&quot;select * from tbl1&quot;</span><span class="p">)</span> <span class="c1">// Uses tx&#39;s connection</span>
 <span class="k">for</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Next</span><span class="p">()</span> <span class="p">{</span>
     <span class="nx">err</span> <span class="p">=</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Scan</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">myvariable</span><span class="p">)</span>
     <span class="c1">// ERROR! tx&#39;s connection is already busy!</span>
     <span class="nx">tx</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">&quot;select * from tbl2 where id = ?&quot;</span><span class="p">,</span> <span class="nx">myvariable</span><span class="p">)</span>
 <span class="p">}</span>
-<span class="p">&lt;</span><span class="o">/</span><span class="nx">pre</span><span class="p">&gt;</span>
 </pre></div>
 </div>
-<p>Go doesn't stop you from trying, though. For that reason, you may wind
-up with a corrupted connection if you attempt to perform another
-statement before the first has released its resources and cleaned up
-after itself. This also means that each statement in a transaction
-results in a separate set of network round-trips to the database.</p>
-<p><strong>Previous: `The Connection Pool &lt;connection-pool.html&gt;`__</strong> <strong>Next:
-`Related Reading and Resources &lt;references.html&gt;`__</strong></p>
+<p>ただし、Goを試してみることはできません。 そのため、最初のステートメントがリソースを解放してからクリーンアップする前に別のステートメントを実行しようとすると、コネクションが破損する可能性があります。 これは、トランザクション内の各ステートメントが、データベースへのネットワークラウンドトリップの個別のセットをもたらすことも意味します。</p>
+<div class="line-block">
+<div class="line">前に戻る: <a class="reference external" href="connection-pool.html">The Connection Pool</a></div>
+<div class="line">次に進む: <a class="reference external" href="references.html">Related Reading and Resources</a></div>
+</div>
+<div class="admonition-todo admonition" id="id11">
+<p class="admonition-title">課題</p>
+<p>全体的に見直す</p>
+</div>
 </div>
 </div>
 
@@ -183,7 +127,7 @@ results in a separate set of network round-trips to the database.</p>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper"><div id="toc" class="sidebarRow">
-    <h5>GO DATABASE/SQL TUTORIAL</h5>
+    <h5><a href="/">GO DATABASE/SQL TUTORIAL</a></h5>
     <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="overview.html">概要</a></li>
 <li class="toctree-l1"><a class="reference internal" href="importing.html">データベースドライバのインポート</a></li>
@@ -195,8 +139,11 @@ results in a separate set of network round-trips to the database.</p>
 <li class="toctree-l1"><a class="reference internal" href="nulls.html">NULLの使用</a></li>
 <li class="toctree-l1"><a class="reference internal" href="varcols.html">不明な列の操作</a></li>
 <li class="toctree-l1"><a class="reference internal" href="connection-pool.html">コネクションプール</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Surprises, Antipatterns and Limitations</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">驚き/アンチパターン/制限</a></li>
 <li class="toctree-l1"><a class="reference internal" href="references.html">関連資料</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="todo.html">TODO(内部用)</a></li>
 </ul>
 
     

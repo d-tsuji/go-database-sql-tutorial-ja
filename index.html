@@ -41,31 +41,8 @@
 <p>次に進みます: <a class="reference external" href="overview.html">Overview of Go's database/sql Package</a></p>
 <div class="toctree-wrapper compound">
 </div>
-<div class="admonition-todo admonition">
-<p class="admonition-title">課題</p>
-<p>直訳なので修正する</p>
-<p>There are a few places where error behavior is special-case, or there’s something additional you might need to know.
-エラーの動作が特殊な場合、あるいは知っておく必要のある追加事項がある場合がいくつかあります。</p>
+<div class="toctree-wrapper compound">
 </div>
-<p class="todo-source">(<a class="reference internal" href="errors.html#id2"><em>元のエントリ</em></a> は、 /home/runner/work/go-database-sql-tutorial-ja/go-database-sql-tutorial-ja/source/errors.rst の 11 行目です)</p>
-<div class="admonition-todo admonition">
-<p class="admonition-title">課題</p>
-<p>訳が不自然</p>
-<p><code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> で返されるエラーは、すべてのデータベースの操作でエラーを捕捉してチェックするのが最善であるという、一般的な規則の唯一の例外です。
-The error returned by <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> is the only exception to the
-general rule that it's best to capture and check for errors in all
-database operations.</p>
-</div>
-<p class="todo-source">(<a class="reference internal" href="errors.html#id5"><em>元のエントリ</em></a> は、 /home/runner/work/go-database-sql-tutorial-ja/go-database-sql-tutorial-ja/source/errors.rst の 54 行目です)</p>
-<div class="admonition-todo admonition">
-<p class="admonition-title">課題</p>
-<p>訳がちょっとわからない。不自然になる。</p>
-<p>You could believe you're executing queries on a single connection,
-inside of a transaction, when in reality Go has created several
-connections for you invisibly and some statements aren't part of the
-transaction.</p>
-</div>
-<p class="todo-source">(<a class="reference internal" href="modifying.html#id4"><em>元のエントリ</em></a> は、 /home/runner/work/go-database-sql-tutorial-ja/go-database-sql-tutorial-ja/source/modifying.rst の 65 行目です)</p>
 </div>
 
 
@@ -75,7 +52,7 @@ transaction.</p>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper"><div id="toc" class="sidebarRow">
-    <h5>GO DATABASE/SQL TUTORIAL</h5>
+    <h5><a href="/">GO DATABASE/SQL TUTORIAL</a></h5>
     <ul>
 <li class="toctree-l1"><a class="reference internal" href="overview.html">概要</a></li>
 <li class="toctree-l1"><a class="reference internal" href="importing.html">データベースドライバのインポート</a></li>
@@ -87,8 +64,11 @@ transaction.</p>
 <li class="toctree-l1"><a class="reference internal" href="nulls.html">NULLの使用</a></li>
 <li class="toctree-l1"><a class="reference internal" href="varcols.html">不明な列の操作</a></li>
 <li class="toctree-l1"><a class="reference internal" href="connection-pool.html">コネクションプール</a></li>
-<li class="toctree-l1"><a class="reference internal" href="surprises.html">Surprises, Antipatterns and Limitations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="surprises.html">驚き/アンチパターン/制限</a></li>
 <li class="toctree-l1"><a class="reference internal" href="references.html">関連資料</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="todo.html">TODO(内部用)</a></li>
 </ul>
 
     
