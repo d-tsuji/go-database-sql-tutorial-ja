@@ -1,48 +1,43 @@
 ==================================
-Handling Errors
+エラーの扱い
 ==================================
 
 ----------------------------------
 
-Almost all operations with ``database/sql`` types return an error as the
-last value. You should always check these errors, never ignore them.
+``database/sql`` を使ったほぼ全ての操作で、最後の値としてエラーを返します。常にエラーをチェックし、無視しないでください。
 
-There are a few places where error behavior is special-case, or there's
-something additional you might need to know.
+エラーの動作が特殊な場合、あるいは知っておく必要のある追加事項がある場合がいくつかあります。
 
-Errors From Iterating Resultsets
-================================
+.. todo::
 
-Consider the following code:
+    直訳なので修正する
+
+    There are a few places where error behavior is special-case, or there’s something additional you might need to know.
+    エラーの動作が特殊な場合、あるいは知っておく必要のある追加事項がある場合がいくつかあります。
+
+繰り返しのリザルトセットからのエラー
+======================================
+
+以下のコードについて考えてみましょう。
 
 .. code-block:: go
 
-   <pre class="prettyprint lang-go">
    for rows.Next() {
        // ...
    }
    if err = rows.Err(); err != nil {
        // handle the error here
    }
-   </pre>
 
-The error from ``rows.Err()`` could be the result of a variety of errors
-in the ``rows.Next()`` loop. The loop might exit for some reason other
-than finishing the loop normally, so you always need to check whether
-the loop terminated normally or not. An abnormal termination
-automatically calls ``rows.Close()``, although it's harmless to call it
-multiple times.
+``rows.Err()`` からのエラーは ``rows.Next()`` のループ内での様々なエラーの結果である可能性があります。ループは、正常終了する以外に、様々な理由で終了する可能性があります。そのためループが正常終了したかどうかにかかわらず、常にエラーをチェックする必要があります。異常終了すると自動的に ``rows.Close()`` が呼ばれますが、これは複数回読んでも悪い影響はありません。
 
-Errors From Closing Resultsets
-==============================
+リザルトセットを閉じるときのエラー
+======================================
 
-You should always explicitly close a ``sql.Rows`` if you exit the loop
-prematurely, as previously mentioned. It's auto-closed if the loop exits
-normally or through an error, but you might mistakenly do this:
+以前に説明したように、ループを途中で終了する場合は、明示的に ``sql.Rows`` を閉じる必要があります。ループが正常終了した場合や、エラーが発生した場合は自動的に閉じられますが、誤って以下のように行う場合があります。
 
 .. code-block:: go
 
-   <pre class="prettyprint lang-go">
    for rows.Next() {
        // ...
        break; // whoops, rows is not closed! memory leak...
@@ -53,49 +48,40 @@ normally or through an error, but you might mistakenly do this:
        // but what should we do if there's an error?
        log.Println(err)
    }
-   </pre>
 
-The error returned by ``rows.Close()`` is the only exception to the
-general rule that it's best to capture and check for errors in all
-database operations. If ``rows.Close()`` returns an error, it's unclear
-what you should do. Logging the error message or panicing might be the
-only sensible thing, and if that's not sensible, then perhaps you should
-just ignore the error.
+``rows.Close()`` で返されるエラーは、すべてのデータベースの操作でエラーを捕捉してチェックするのが最善であるという、一般的な規則の唯一の例外です。``rows.Close()`` がエラーを返す場合、何をするべきであるかは不明です。エラーメッセージのロギングやpanicを起こすのが唯一できる賢明なことかもしれません。そうでない場合、エラーを無視する必要があるかもしれません。
 
-Errors From QueryRow()
-======================
+.. todo::
 
-Consider the following code to fetch a single row:
+    訳が不自然
+
+    ``rows.Close()`` で返されるエラーは、すべてのデータベースの操作でエラーを捕捉してチェックするのが最善であるという、一般的な規則の唯一の例外です。
+    The error returned by ``rows.Close()`` is the only exception to the
+    general rule that it's best to capture and check for errors in all
+    database operations.
+
+QueryRow() からのエラー
+===========================
+
+単一の行をフェッチする以下のコードについて考えてみましょう。
 
 .. code-block:: go
 
-   <pre class="prettyprint lang-go">
    var name string
    err = db.QueryRow("select name from users where id = ?", 1).Scan(name)
    if err != nil {
        log.Fatal(err)
    }
    fmt.Println(name)
-   </pre>
 
-What if there was no user with ``id = 1``? Then there would be no row in
-the result, and ``.Scan()`` would not scan a value into ``name``. What
-happens then?
+もし ``id = 1`` であるユーザが存在しない場合はどうなりますか？その場合は結果の行がなく、 ``Scan()`` は ``name`` に何も読み込みません。何が起こるでしょうか。
 
-Go defines a special error constant, called ``sql.ErrNoRows``, which is
-returned from ``QueryRow()`` when the result is empty. This needs to be
-handled as a special case in most circumstances. An empty result is
-often not considered an error by application code, and if you don't
-check whether an error is this special constant, you'll cause
-application-code errors you didn't expect.
+Gohは結果が空のときに ``QueryRow()`` から返される ``sql.ErrNoRows`` と呼ばれる特別なエラーを定義しています。ほとんどの場合、これは特別なケースとして扱う必要があります。空の結果はアプリケーションのエラーとして見なされないことが多く、エラーがこの特別なエラーであるかどうかを確認しないと、予期しないアプリケーションエラーを引き起こします。
 
-Errors from the query are deferred until ``Scan()`` is called, and then
-are returned from that. The above code is better written like this
-instead:
+クエリからのエラーは ``Scan()`` が呼ばれるまで遅延され、呼ばれたら返されます。上記のコードは以下のように書きかえるほうが良いです。
 
 .. code-block:: go
 
-   <pre class="prettyprint lang-go">
    var name string
    err = db.QueryRow("select name from users where id = ?", 1).Scan(name)
    if err != nil {
@@ -106,38 +92,44 @@ instead:
        }
    }
    fmt.Println(name)
-   </pre>
 
-One might ask why an empty result set is considered an error. There's
-nothing erroneous about an empty set. The reason is that the
-``QueryRow()`` method needs to use this special-case in order to let the
-caller distinguish whether ``QueryRow()`` in fact found a row; without
-it, ``Scan()`` wouldn't do anything and you might not realize that your
-variable didn't get any value from the database after all.
+.. note::
 
-You should only run into this error when you're using ``QueryRow()``. If
-you encounter this error elsewhere, you're doing something wrong.
+    [訳注] Go1.13から ``errors.Is`` のメソッドが追加されているので、エラーが ``sql.ErrNoRows`` であるかどうかの判定は以下のように実装するのが良いでしょう。
 
-Identifying Specific Database Errors
+    .. code-block:: go
+
+        if err != nil {
+            if errors.Is(err, sql.ErrNoRows) {
+                // there were no rows, but otherwise no error occurred
+            } else {
+                log.Fatal(err)
+            }
+        }
+
+なぜ空の結果セットがエラーと見なされないのか疑問に思うかもしれません。空のセットについてエラーはありません。その理由は、``QueryRow()`` メソッドは呼び出し元が ``QueryRow()`` が実際に行を見つけたか区別する必要があるため、この特殊なケースを使う必要があるためです。これがないと、``Scan()`` は何も実行せず、変数がデータベースから値を取得できなかったことも気づかないかもしれません。
+
+``QueryRow()`` を使用している場合のみこのエラーが発生するでしょう。それ以外の場面でこのエラーが発生した場合、何が間違っていることをしているでしょう。
+
+データベース固有のエラーの特定
 ====================================
+
+次のようなコードを書きたくなるかもしれません。
 
 It can be tempting to write code like the following:
 
 .. code-block:: go
 
-   <pre class="prettyprint lang-go">
    rows, err := db.Query("SELECT someval FROM sometable")
    // err contains:
    // ERROR 1045 (28000): Access denied for user 'foo'@'::1' (using password: NO)
    if strings.Contains(err.Error(), "Access denied") {
        // Handle the permission-denied error
    }
-   </pre>
 
-This is not the best way to do it, though. For example, the string value
-might vary depending on what language the server uses to send error
-messages. It's much better to compare error numbers to identify what a
-specific error is.
+ただしこれは最善の方法ではありません。例えば、文字列の値はエラーメッセージを送信するときに使われるサーバの言語に依存します。エラー番号を比較して、特定のエラーが何であるか特定することをおすすめします。
+
+ただし、これは ``database/sql`` パッケージそれ自体に含まれているわけではなく、ドライバーによって異なります。このチュートリアルが対象とするMySQLドライバーでは、次のコードを記述できます。
 
 The mechanism to do this varies between drivers, however, because this
 isn't part of ``database/sql`` itself. In the MySQL driver that this
@@ -145,58 +137,32 @@ tutorial focuses on, you could write the following code:
 
 .. code-block:: go
 
-   <pre class="prettyprint lang-go">
    if driverErr, ok := err.(*mysql.MySQLError); ok { // Now the error number is accessible directly
        if driverErr.Number == 1045 {
            // Handle the permission-denied error
        }
    }
-   </pre>
 
-Again, the ``MySQLError`` type here is provided by this specific driver,
-and the ``.Number`` field may differ between drivers. The value of the
-number, however, is taken from MySQL's error message, and is therefore
-database specific, not driver specific.
+繰り返しますが、ここでの ``MySQLError`` 型は特定のドライバーによって提供され、``.Number`` フィールドはドライバーによって異なる場合があります。ただし、数値の値はMySQLのエラーメッセージから取得されるため、ドライバー固有ではなくデータベース固有です。
 
-This code is still ugly. Comparing to 1045, a magic number, is a code
-smell. Some drivers (though not the MySQL one, for reasons that are
-off-topic here) provide a list of error identifiers. The Postgres ``pq``
-driver does, for example, in
-`error.go <https://github.com/lib/pq/blob/master/error.go>`__. And
-there's an external package of `MySQL error numbers maintained by
-VividCortex <https://github.com/VividCortex/mysqlerr>`__. Using such a
-list, the above code is better written thus:
+このコードはまだ汚いです。1045 というマジックナンバーと比較しているためです。一部のドライバー(ここではトピックの範囲外であるため、MySQLのドライバーではありません)はエラーを区別する識別子のリストを提供しています。例えば Postgres の ``pq`` ドライバーでは `error.go <https://github.com/lib/pq/blob/master/error.go>`_ にエラーのリストがあります。VividCortexによって管理されているMySQLのエラー番号の一覧である `外部パッケージ <https://github.com/VividCortex/mysqlerr>`_ があります。このようなリストを用いると、上記のコードは次のように改善できます。
 
 .. code-block:: go
 
-   <pre class="prettyprint lang-go">
    if driverErr, ok := err.(*mysql.MySQLError); ok {
        if driverErr.Number == mysqlerr.ER_ACCESS_DENIED_ERROR {
            // Handle the permission-denied error
        }
    }
-   </pre>
 
-Handling Connection Errors
+コネクションエラーの扱い
 ==========================
 
-What if your connection to the database is dropped, killed, or has an
-error?
+データベースへの接続が切断、強制終了、またはエラーが発生した場合はどうなりますか？
 
-You don't need to implement any logic to retry failed statements when
-this happens. As part of the `connection
-pooling <connection-pool.html>`__ in ``database/sql``, handling failed
-connections is built-in. If you execute a query or other statement and
-the underlying connection has a failure, Go will reopen a new connection
-(or just get another from the connection pool) and retry, up to 10
-times.
+これが発生した場合は失敗したステートメントをリトライするロジックを実装する必要はありません。``database/sql`` にある `connection pooling <connection-pool.html>`_ の一部として、失敗した接続の処理が組み込まれています。クエリや他のステートメントを実行し、コネクションに障害がある場合、Goは新しいコネクションを再度Openします。あるいはコネクションプールから別のコネクションを取得します。最大10回再試行します。
 
-There can be some unintended consequences, however. Some types of errors
-may be retried when other error conditions happen. This might also be
-driver-specific. One example that has occurred with the MySQL driver is
-that using ``KILL`` to cancel an undesired statement (such as a
-long-running query) results in the statement being retried up to 10
-times.
+ただし、意図しない結果が生じる可能性があります。 他のエラー状態が発生すると、一部のタイプのエラーが再試行される場合があります。 これはドライバー固有の場合もあります。 MySQLドライバーで発生した1つの例は、 ``KILL`` を使用して望ましくないステートメント(長時間実行されるクエリなど)をキャンセルすると、ステートメントが最大10回再試行されることです。
 
-**Previous: `Using Prepared Statements <prepared.html>`__** **Next:
-`Working with NULLs <nulls.html>`__**
+| 前に戻る: `Using Prepared Statements <prepared.html>`_
+| 次に進む: `Working with NULLs <nulls.html>`_
