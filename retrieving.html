@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>Retrieving Result Sets &#8212; Go database/sql tutorial  ドキュメント</title>
+    <title>リザルトセットの取得 &#8212; Go database/sql tutorial  ドキュメント</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -15,7 +15,7 @@
     <script type="text/javascript" src="_static/translations.js"></script>
     <link rel="index" title="索引" href="genindex.html" />
     <link rel="search" title="検索" href="search.html" />
-    <link rel="next" title="Modifying Data and Using Transactions" href="modifying.html" />
+    <link rel="next" title="トランザクションを使ったデータの変更" href="modifying.html" />
     <link rel="prev" title="Accessing the Database" href="accessing.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -33,8 +33,8 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="retrieving-result-sets">
-<h1>Retrieving Result Sets<a class="headerlink" href="#retrieving-result-sets" title="このヘッドラインへのパーマリンク">¶</a></h1>
+  <div class="section" id="id1">
+<h1>リザルトセットの取得<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h1>
 <hr class="docutils" />
 <p>データストアから結果を取得する慣用的な方法がいくつかあります。</p>
 <ol class="arabic simple">
@@ -44,8 +44,8 @@
 <li><p>単一の行を返すクエリを発行します。この場合はショートカットがあります。</p></li>
 </ol>
 <p>Goの <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> の関数名は重要です。関数名に <code class="docutils literal notranslate"><span class="pre">Query</span></code> という文字を含んでいれば、データベースにクエリを発行し、空行も可能な行の集合を返すために設計されているとわかります。行を返さないステートメントの場合、 <code class="docutils literal notranslate"><span class="pre">Query</span></code> 関数名を使うべきではなく、 <code class="docutils literal notranslate"><span class="pre">Exec()</span></code> を用いるべきです。</p>
-<div class="section" id="id1">
-<h2>データベースからのデータの取得<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id2">
+<h2>データベースからのデータの取得<a class="headerlink" href="#id2" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>データベースにクエリを発行して、結果を取得する方法の例を見てみましょう。<code class="docutils literal notranslate"><span class="pre">user</span></code> テーブルから <code class="docutils literal notranslate"><span class="pre">id</span></code> が1であるユーザを取得し、<code class="docutils literal notranslate"><span class="pre">id</span></code> と <code class="docutils literal notranslate"><span class="pre">name</span></code> を表示します。<code class="docutils literal notranslate"><span class="pre">rows.Scan()</span></code> を使用して1度に1行ずつ、変数に結果を割り当てます。</p>
 <div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kd">var</span> <span class="p">(</span>
     <span class="nx">id</span> <span class="kt">int</span>
@@ -97,8 +97,8 @@
 <p>例えば、<code class="docutils literal notranslate"><span class="pre">VARCHAR(45)</span></code> などの文字列のカラムとして定義されたテーブルからいくつかの行をselectするとします。ただしテーブルには常に数値を含んでいるとします。文字列にポインタを渡すと、Goはバイトを文字列にコピーします。これで <code class="docutils literal notranslate"><span class="pre">strconv.ParseInt()</span></code> などを用いて値を数値に変換することができます。SQL操作のエラーをチェックする必要があり、また整数の解析エラーをチェックする必要があります。これは面倒で退屈です。</p>
 <p>その代わりに、単に <code class="docutils literal notranslate"><span class="pre">Scan()</span></code> を数値へのポインタに渡すことができます。Goは数値であることを検出して <code class="docutils literal notranslate"><span class="pre">strconv.ParseInt()</span></code> を呼び出します。変換時にエラーが発生した場合、<code class="docutils literal notranslate"><span class="pre">Scan()</span></code> を呼び出すとエラーが返されます。コードはすっきりと小さくなりました。これは <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> の推奨される使い方です。</p>
 </div>
-<div class="section" id="id2">
-<h2>クエリの準備<a class="headerlink" href="#id2" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id3">
+<h2>クエリの準備<a class="headerlink" href="#id3" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>一般に、複数回クエリを発行するためにクエリの準備をする必要があります。クエリを準備した結果はプリペアードステートメントとなります。このステートメントはプレースホルダ(別名バインド値)としてステートメントの実行時に指定するパラメータを含めることができます。これはすべての理由(例えばSQLインジェクショ攻撃を回避するなど)で、文字列を結合するよりもはるかに優れています。</p>
 <p>MySQLではパラメータのプレースホルダは <code class="docutils literal notranslate"><span class="pre">?</span></code> です。PostgreSQLでは <code class="docutils literal notranslate"><span class="pre">$N</span></code> (Nは数値)です。SQLiteではどちらでもOKです。Oracleのプレースホルダの場合は <code class="docutils literal notranslate"><span class="pre">:param1</span></code> といったコロンと名前から始まる必要がありません。今回の例ではMySQL を用いるため、プレースホルダには <code class="docutils literal notranslate"><span class="pre">?</span></code> を使用します。</p>
 <div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">stmt</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Prepare</span><span class="p">(</span><span class="s">&quot;select id, name from users where id = ?&quot;</span><span class="p">)</span>
@@ -121,8 +121,8 @@
 </div>
 <p>内部的には <code class="docutils literal notranslate"><span class="pre">db.Query()</span></code> は実際にプリペアードステートメントの準備、実行、Closeをします。これはデータベースへの3回の往復です。注意を怠ると、アプリケーションが行うデータベースとのやりとりが3倍になります。いくつかのドライバーは特定の場合に回避することができますが、すべてのドライバーが回避できるわけではありません。詳細は <a class="reference external" href="prepared.html">prepared statements</a> を参照してください。</p>
 </div>
-<div class="section" id="id3">
-<h2>単一の行のクエリ<a class="headerlink" href="#id3" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id4">
+<h2>単一の行のクエリ<a class="headerlink" href="#id4" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>クエリが高々1行しか返さない場合、長々とした定型的なコードの代わりにショートカットを使うことができます。</p>
 <div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kd">var</span> <span class="nx">name</span> <span class="kt">string</span>
 <span class="nx">err</span> <span class="p">=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">QueryRow</span><span class="p">(</span><span class="s">&quot;select name from users where id = ?&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">).</span><span class="nx">Scan</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>
@@ -162,18 +162,18 @@
         <div class="sphinxsidebarwrapper"><div id="toc" class="sidebarRow">
     <h5>GO DATABASE/SQL TUTORIAL</h5>
     <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="importing.html">Importing a Database Driver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">概要</a></li>
+<li class="toctree-l1"><a class="reference internal" href="importing.html">データベースドライバのインポート</a></li>
 <li class="toctree-l1"><a class="reference internal" href="accessing.html">Accessing the Database</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Retrieving Result Sets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="modifying.html">Modifying Data and Using Transactions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="prepared.html">Using Prepared Statements</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">リザルトセットの取得</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifying.html">トランザクションを使ったデータの変更</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prepared.html">プリペアードステートメントの扱い</a></li>
 <li class="toctree-l1"><a class="reference internal" href="errors.html">エラーの扱い</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nulls.html">Working with NULLs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="varcols.html">Working with Unknown Columns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="connection-pool.html">The Connection Pool</a></li>
 <li class="toctree-l1"><a class="reference internal" href="surprises.html">Surprises, Antipatterns and Limitations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="references.html">Related Reading and Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">関連資料</a></li>
 </ul>
 
     

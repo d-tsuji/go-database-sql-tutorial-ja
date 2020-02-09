@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>Using Prepared Statements &#8212; Go database/sql tutorial  ドキュメント</title>
+    <title>プリペアードステートメントの扱い &#8212; Go database/sql tutorial  ドキュメント</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -16,7 +16,7 @@
     <link rel="index" title="索引" href="genindex.html" />
     <link rel="search" title="検索" href="search.html" />
     <link rel="next" title="エラーの扱い" href="errors.html" />
-    <link rel="prev" title="Modifying Data and Using Transactions" href="modifying.html" />
+    <link rel="prev" title="トランザクションを使ったデータの変更" href="modifying.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -33,11 +33,11 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="using-prepared-statements">
-<h1>Using Prepared Statements<a class="headerlink" href="#using-prepared-statements" title="このヘッドラインへのパーマリンク">¶</a></h1>
+  <div class="section" id="id1">
+<h1>プリペアードステートメントの扱い<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h1>
 <p>Goのプリペアードステートメントは、よく知られた利点(セキュリティ、効率性、利便性)はすべてあります。ただし、それらの実装方法は、特に <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> の内部のやり取りに関して、よく知られているものとは少し異なるかもしれません。</p>
-<div class="section" id="id1">
-<h2>プリペアードステートメントとコネクション<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id2">
+<h2>プリペアードステートメントとコネクション<a class="headerlink" href="#id2" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>データベースのレイヤーでは、プリペアードステートメントは単一のデータベース接続に紐付けられます。典型的な流れは、クライアントがプレースホルダ付きのSQLステートメントをサーバーに準備として送信します。サーバーからはステートメントIDがレスポンスとして返ってきて、クライアントはレスポンスIDとパラメータを送信することでステートメントを実行します。</p>
 <p>しかしGoでは <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> パッケージのユーザーには直接コネクションが公開されることはありません。接続に関するステートメントを準備する必要はありません。<code class="docutils literal notranslate"><span class="pre">DB</span></code> or a <code class="docutils literal notranslate"><span class="pre">Tx</span></code> を用いて準備します。そして <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> は自動リトライなどのいくつかの便利な機能があります。これらの理由によってドライバーのレイヤで存在するプリペアードステートメントとコネクションの紐付けは、コードには表れません。</p>
 <p>仕組みは次のとおりです。</p>
@@ -48,8 +48,8 @@
 </ol>
 <p>元のコネクションがビジーの場合、必要に応じてステートメントは再準備されます。多数の接続がビジー状態のままになるような高い並列度で使用することができ、たくさんのプリペアードステートメントを作成することができます。これにより、ステートメントのリークをもたらす可能性があります。予想よりも頻繁に再準備され、サーバー側ではステートメントの数が制限されることさえあります。</p>
 </div>
-<div class="section" id="id2">
-<h2>プリペアードステートメントの回避<a class="headerlink" href="#id2" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id3">
+<h2>プリペアードステートメントの回避<a class="headerlink" href="#id3" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>Goは内部でプリペアードステートメントを作成します。簡単な例として <code class="docutils literal notranslate"><span class="pre">db.Query(sql,</span> <span class="pre">param1,</span> <span class="pre">param2)</span></code> はSQLを準備し、パラメータを受け取って実行され、ステートメントは閉じられることで機能します。</p>
 <p>いくつかの場面で、プリペアードステートメントが必要でない場合もあります。以下の理由によるものです。</p>
 <ol class="arabic simple">
@@ -58,8 +58,8 @@
 </ol>
 <p>プリペアードステートメントを使用したくない場合は、<code class="docutils literal notranslate"><span class="pre">fmt.Sprint()</span></code> などを用いてSQLを組み立てる必要があり、<code class="docutils literal notranslate"><span class="pre">db.Query()</span></code> や <code class="docutils literal notranslate"><span class="pre">db.QueryRow()</span></code> に唯一の引数として渡す必要があります。またドライバーは素のテキストクエリの実行をサポートする必要があります。これはGo1.1で追加された <code class="docutils literal notranslate"><span class="pre">Execer</span></code> や <code class="docutils literal notranslate"><span class="pre">Queryer</span></code> インターフェースを実装します。詳細は <a class="reference external" href="http://golang.org/pkg/database/sql/driver/#Execer">documented here</a> を参照ください。</p>
 </div>
-<div class="section" id="id3">
-<h2>トランザクション内でのプリペアードステートメント<a class="headerlink" href="#id3" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id4">
+<h2>トランザクション内でのプリペアードステートメント<a class="headerlink" href="#id4" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">Tx</span></code> 内で作成されたプリペアードステートメントは <code class="docutils literal notranslate"><span class="pre">Tx</span></code> のみに紐付いているため、再準備に関する以前の注意事項は適用されません。<code class="docutils literal notranslate"><span class="pre">Tx</span></code> オブジェクトを操作する場合、その操作はバックグラウンドの唯一のコネクションにのみ直接マッピングされます。</p>
 <div class="admonition note">
 <p class="admonition-title">注釈</p>
@@ -95,8 +95,8 @@ Prepared statements that are created in a <code class="docutils literal notransl
 </div>
 <p>Go1.4以前は <code class="docutils literal notranslate"><span class="pre">sql.Tx</span></code> をCloseするとそれに紐付いているコネクションを開放し、プールに戻します。しかしプリペアードステートメントでCloseを遅延呼び出しすることは、トランザクションが発生した <strong>後</strong> に実行されました。これはコネクションへの同時アクセスにつながり、接続状態に一貫性がありません。Go1.4以前のバージョンを使用する場合、トランザクションがコミットやロールバックされる前に、ステートメントが閉じられていることを確認する必要がありました。 <a class="reference external" href="https://github.com/golang/go/issues/4459">この問題</a> はGo1.4の <a class="reference external" href="https://codereview.appspot.com/131650043">CR 131650043</a> で修正されました。</p>
 </div>
-<div class="section" id="id5">
-<h2>プレースホルダの構文<a class="headerlink" href="#id5" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id6">
+<h2>プレースホルダの構文<a class="headerlink" href="#id6" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>プリペアードステートメントで使われるパラメータのプレースホルダの構文はデータベース固有のものです。例としてMySQLとPostgreSQLとOracleを比較しています。</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>MySQL               PostgreSQL            Oracle
 =====               ==========            ======
@@ -120,18 +120,18 @@ VALUES(?, ?, ?)     VALUES($1, $2, $3)    VALUES(:val1, :val2, :val3)
         <div class="sphinxsidebarwrapper"><div id="toc" class="sidebarRow">
     <h5>GO DATABASE/SQL TUTORIAL</h5>
     <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="importing.html">Importing a Database Driver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">概要</a></li>
+<li class="toctree-l1"><a class="reference internal" href="importing.html">データベースドライバのインポート</a></li>
 <li class="toctree-l1"><a class="reference internal" href="accessing.html">Accessing the Database</a></li>
-<li class="toctree-l1"><a class="reference internal" href="retrieving.html">Retrieving Result Sets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="modifying.html">Modifying Data and Using Transactions</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Using Prepared Statements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="retrieving.html">リザルトセットの取得</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifying.html">トランザクションを使ったデータの変更</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">プリペアードステートメントの扱い</a></li>
 <li class="toctree-l1"><a class="reference internal" href="errors.html">エラーの扱い</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nulls.html">Working with NULLs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="varcols.html">Working with Unknown Columns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="connection-pool.html">The Connection Pool</a></li>
 <li class="toctree-l1"><a class="reference internal" href="surprises.html">Surprises, Antipatterns and Limitations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="references.html">Related Reading and Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">関連資料</a></li>
 </ul>
 
     

@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>Modifying Data and Using Transactions &#8212; Go database/sql tutorial  ドキュメント</title>
+    <title>トランザクションを使ったデータの変更 &#8212; Go database/sql tutorial  ドキュメント</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -15,8 +15,8 @@
     <script type="text/javascript" src="_static/translations.js"></script>
     <link rel="index" title="索引" href="genindex.html" />
     <link rel="search" title="検索" href="search.html" />
-    <link rel="next" title="Using Prepared Statements" href="prepared.html" />
-    <link rel="prev" title="Retrieving Result Sets" href="retrieving.html" />
+    <link rel="next" title="プリペアードステートメントの扱い" href="prepared.html" />
+    <link rel="prev" title="リザルトセットの取得" href="retrieving.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -33,12 +33,12 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="modifying-data-and-using-transactions">
-<h1>Modifying Data and Using Transactions<a class="headerlink" href="#modifying-data-and-using-transactions" title="このヘッドラインへのパーマリンク">¶</a></h1>
+  <div class="section" id="id1">
+<h1>トランザクションを使ったデータの変更<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h1>
 <hr class="docutils" />
 <p>これで、トランザクションを用いてデータを操作する準備が整いました。行のフェッチと同様にデータの更新に &quot;ステートメント&quot; オブジェクトを使う言語に慣れている人にとっては、フェッチをトランザクション操作を区別しているのは人為的と思うかもしれません。Goでは区別する重要な理由があります。</p>
-<div class="section" id="id1">
-<h2>データを変更するステートメント<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id2">
+<h2>データを変更するステートメント<a class="headerlink" href="#id2" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">INSERT</span></code>, <code class="docutils literal notranslate"><span class="pre">UPDATE</span></code>, <code class="docutils literal notranslate"><span class="pre">DELETE</span></code> やその他の行を返さないステートメントを実行するためには、できればリペアードステートメントで <code class="docutils literal notranslate"><span class="pre">Exec()</span></code> を使います。以下の例は、行をInsertし、操作に関するメタデータを検査する例を示します。</p>
 <p>Use <code class="docutils literal notranslate"><span class="pre">Exec()</span></code>, preferably with a prepared statement, to accomplish an
 <code class="docutils literal notranslate"><span class="pre">INSERT</span></code>, <code class="docutils literal notranslate"><span class="pre">UPDATE</span></code>, <code class="docutils literal notranslate"><span class="pre">DELETE</span></code>, or another statement that doesn't
@@ -71,8 +71,8 @@ metadata about the operation:</p>
 </div>
 <p>答えは No です。上記2つは同じことを <strong>しない</strong> ため、<code class="docutils literal notranslate"><span class="pre">Query()</span></code> をこのように使用するべきではありません。<code class="docutils literal notranslate"><span class="pre">Query()</span></code> は <code class="docutils literal notranslate"><span class="pre">sql.Rows</span></code> を返します。これは <code class="docutils literal notranslate"><span class="pre">sql.Rows</span></code> が閉じられるまでデータベースへのコネクションを保持します。未読のデータが存在する可能性があるため(データの行数が増えるなど)、コネクションを使用することができません。上記の例ではコネクションが開放されることはありません。最終的にガベージコレクタが基点になっている <code class="docutils literal notranslate"><span class="pre">net.Conn</span></code> を閉じることになりますが、これには時間がかかる場合があります。さらに、 sql/database パッケージはプール内のコネクションを追跡し続けます。ある時点でコネクションが開放され、コネクションを再利用するためです。これはコネクションが多すぎます、などといったリソース不足を引き起こすアンチパターンの一つです。</p>
 </div>
-<div class="section" id="id2">
-<h2>トランザクションの動作<a class="headerlink" href="#id2" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id3">
+<h2>トランザクションの動作<a class="headerlink" href="#id3" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>Goのトランザクションは基本的にデータストアへのコネクションを保持するオブジェクトです。これにより、これまで見てきたすべての操作をすることができます。同じコネクションで実施されることが保証されます。</p>
 <p><code class="docutils literal notranslate"><span class="pre">db.Begin()</span></code> を呼び出してトランザクションを開始することができます。トランザクションを閉じるには <code class="docutils literal notranslate"><span class="pre">db.Begin()</span></code> から返される <code class="docutils literal notranslate"><span class="pre">Tx</span></code> の変数で <code class="docutils literal notranslate"><span class="pre">Commit()</span></code> や <code class="docutils literal notranslate"><span class="pre">Rollback()</span></code> メソッドを使用します。内部では <code class="docutils literal notranslate"><span class="pre">Tx</span></code> はプールからコネクションを取得し、トランザクション専用で使用するために保持します。<code class="docutils literal notranslate"><span class="pre">Tx</span></code> のメソッドは  <code class="docutils literal notranslate"><span class="pre">Query()</span></code> などのデータベースで呼び出すことができるメソッドと1対1で対応します。</p>
 <p>トランザクション内で生成されるプリペアードステートメントは、そのトランザクションのみに紐付けられます。詳しくは <a class="reference external" href="prepared.html">prepared statements</a> を参照ください。</p>
@@ -82,7 +82,7 @@ metadata about the operation:</p>
 <li><p>データベースの状態がトランザクションを示すGoの変数の状態と不整合になる可能性があります。</p></li>
 <li><p>実際にはGoがいくつかのユーザに見えないコネクションを生成していて、いくつかのステートメントはトランザクションの一部でない場合、トランザクション内の単一のコネクションでクエリを実行していると信じることができます。</p></li>
 </ul>
-<div class="admonition-todo admonition" id="id3">
+<div class="admonition-todo admonition" id="id4">
 <p class="admonition-title">課題</p>
 <p>訳がちょっとわからない。不自然になる。</p>
 <p>You could believe you're executing queries on a single connection,
@@ -114,18 +114,18 @@ transaction.</p>
         <div class="sphinxsidebarwrapper"><div id="toc" class="sidebarRow">
     <h5>GO DATABASE/SQL TUTORIAL</h5>
     <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="importing.html">Importing a Database Driver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">概要</a></li>
+<li class="toctree-l1"><a class="reference internal" href="importing.html">データベースドライバのインポート</a></li>
 <li class="toctree-l1"><a class="reference internal" href="accessing.html">Accessing the Database</a></li>
-<li class="toctree-l1"><a class="reference internal" href="retrieving.html">Retrieving Result Sets</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Modifying Data and Using Transactions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="prepared.html">Using Prepared Statements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="retrieving.html">リザルトセットの取得</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">トランザクションを使ったデータの変更</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prepared.html">プリペアードステートメントの扱い</a></li>
 <li class="toctree-l1"><a class="reference internal" href="errors.html">エラーの扱い</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nulls.html">Working with NULLs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="varcols.html">Working with Unknown Columns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="connection-pool.html">The Connection Pool</a></li>
 <li class="toctree-l1"><a class="reference internal" href="surprises.html">Surprises, Antipatterns and Limitations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="references.html">Related Reading and Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">関連資料</a></li>
 </ul>
 
     
