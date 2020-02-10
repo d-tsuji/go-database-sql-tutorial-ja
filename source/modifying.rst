@@ -4,17 +4,12 @@
 
 ----------------------------------
 
-これで、トランザクションを用いてデータを操作する準備が整いました。行のフェッチと同様にデータの更新に "ステートメント" オブジェクトを使う言語に慣れている人にとっては、フェッチをトランザクション操作を区別しているのは人為的と思うかもしれません。Goでは区別する重要な理由があります。
+これで、トランザクションを用いてデータを操作する準備が整いました。行のフェッチと同様にデータの更新に "ステートメント" オブジェクトを使う言語に慣れている人にとっては、フェッチをトランザクション操作と区別しているのはなにか理由があるのではないかと思うかもしれません。Goでは区別する重要な理由があります。
 
 データを変更するステートメント
 ===================================
 
 ``INSERT``, ``UPDATE``, ``DELETE`` やその他の行を返さないステートメントを実行するためには、できればリペアードステートメントで ``Exec()`` を使います。以下の例は、行をInsertし、操作に関するメタデータを検査する例を示します。
-
-Use ``Exec()``, preferably with a prepared statement, to accomplish an
-``INSERT``, ``UPDATE``, ``DELETE``, or another statement that doesn't
-return rows. The following example shows how to insert a row and inspect
-metadata about the operation:
 
 .. code-block:: go
 
@@ -36,9 +31,9 @@ metadata about the operation:
    }
    log.Printf("ID = %d, affected = %d\n", lastId, rowCnt)
 
-ステートメントを実行すると、ステートメントのメタデー(例えば最後似挿入したIDや影響があった行数など)へアクセスできる ``sql.Result`` オブジェクトが生成されます。
+ステートメントを実行すると、ステートメントのメタデータ(例えば最後似挿入したIDや影響があった行数など)へアクセスできる ``sql.Result`` オブジェクトが生成されます。
 
-結果を木にする必要がない場合はどうすればよいでしょうか。ステートメントを実行してエラーをチェックしたいだけで、結果を無視したい場合はどうでしょうか。次の2つのステートメントは同じように振る舞うでしょうか？
+結果を気にする必要がない場合はどうすればよいでしょうか。ステートメントを実行してエラーをチェックしたいだけで、結果を無視したい場合はどうでしょうか。次の2つのステートメントは同じように振る舞うでしょうか？
 
 .. code-block:: go
 
@@ -65,7 +60,7 @@ Goのトランザクションは基本的にデータストアへのコネクシ
 .. todo::
 
     訳がちょっとわからない。不自然になる。
-    
+
     You could believe you're executing queries on a single connection,
     inside of a transaction, when in reality Go has created several
     connections for you invisibly and some statements aren't part of the
