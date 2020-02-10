@@ -15,7 +15,7 @@
     <script src="_static/translations.js"></script>
     <link rel="index" title="索引" href="genindex.html" />
     <link rel="search" title="検索" href="search.html" />
-    <link rel="next" title="データベースドライバのインポート" href="importing.html" />
+    <link rel="next" title="ドライバのインポート" href="importing.html" />
     <link rel="prev" title="Go database/sql tutorial" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -33,17 +33,17 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="id1">
+  <a href="https://github.com/d-tsuji/go-introduction-book"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/a6677b08c955af8400f44c6298f40e7d19cc5b2d/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677261795f3664366436642e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png"></a><div class="section" id="id1">
 <h1>概要<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h1>
 <hr class="docutils" />
 <p>Goでデータベースにアクセスするためには <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> を使います。この型を用いて、ステートメントやトランザクションの生成、クエリの実行や結果のフェッチをすることできます。</p>
 <p>まず最初に知っておくべきこととして <code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> はデータベース接続ではないことです。また特定のデータベースソフトウェアの &quot;データベース&quot; や &quot;スキーマ&quot; の概念には対応していません。ネットワーク接続やインメモリ、プロセスを通じてアクセスされる様々なローカルファイルへのインターフェースと、データベースの存在を抽象化します。</p>
 <p><code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> はバックグラウンドでいくつかの重要なタスクを実行します。</p>
 <ul class="simple">
-<li><p>ドライバーを介して、実際に存在するデータベースへの接続をOpenやClose</p></li>
-<li><p>必要に応じて様々な接続へのコネクションプーリングの管理</p></li>
+<li><p>ドライバーを介して、実在するデータベースへのコネクションをOpenしたりやCloseしたりする</p></li>
+<li><p>必要に応じて様々なコネクションへのコネクションプーリングの管理をする</p></li>
 </ul>
-<p><code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> の抽象化はデータベースへの同時アクセスを管理する方法について心配する必要がないように設計されています。タスクを実行するとコネクションは使用中としてマークされます。使用されなくなったときには使用可能なコネクションとしてプールに戻ります。これは、コネクションをプールに戻すことに失敗すると、<code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> は大量のコネクションをOpenすることになります。接続が多すぎます、開いているファイルハンドラが多すぎます、空いているネットワークポートがありません、などといったリソース不足をもたらします。これについては後ほど詳しく説明します。</p>
+<p><code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> の抽象化はデータベースへの同時アクセスを管理する方法について心配する必要がないように設計されています。タスクを実行するとコネクションは使用中としてマークされます。使用されなくなったときには使用可能なコネクションとしてプールに戻ります。これは、コネクションをプールに戻すことに失敗すると、<code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> は大量のコネクションをOpenすることになります。「接続が多すぎます」、「開いているファイルハンドラが多すぎます」、「空いているネットワークポートがありません」、などといったリソース不足をもたらします。これについては後ほど詳しく説明します。</p>
 <p><code class="docutils literal notranslate"><span class="pre">sql.DB</span></code> を生成したら、データベースへクエリを発行したり、ステートメントやトランザクションを生成することができます。</p>
 <p>次に進みます: <a class="reference external" href="importing.html">Importing a Database Driver</a></p>
 </div>
@@ -58,12 +58,12 @@
     <h5><a href="index.html">GO DATABASE/SQL TUTORIAL</a></h5>
     <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">概要</a></li>
-<li class="toctree-l1"><a class="reference internal" href="importing.html">データベースドライバのインポート</a></li>
+<li class="toctree-l1"><a class="reference internal" href="importing.html">ドライバのインポート</a></li>
 <li class="toctree-l1"><a class="reference internal" href="accessing.html">データベースへのアクセス</a></li>
 <li class="toctree-l1"><a class="reference internal" href="retrieving.html">リザルトセットの取得</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modifying.html">トランザクションを使ったデータの変更</a></li>
 <li class="toctree-l1"><a class="reference internal" href="prepared.html">プリペアードステートメント</a></li>
-<li class="toctree-l1"><a class="reference internal" href="errors.html">エラーの扱い</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">エラーハンドリング</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nulls.html">NULLの使用</a></li>
 <li class="toctree-l1"><a class="reference internal" href="varcols.html">不明な列の操作</a></li>
 <li class="toctree-l1"><a class="reference internal" href="connection-pool.html">コネクションプール</a></li>

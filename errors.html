@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>エラーの扱い &#8212; Go database/sql tutorial  ドキュメント</title>
+    <title>エラーハンドリング &#8212; Go database/sql tutorial  ドキュメント</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -33,8 +33,8 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="id1">
-<h1>エラーの扱い<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h1>
+  <a href="https://github.com/d-tsuji/go-introduction-book"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/a6677b08c955af8400f44c6298f40e7d19cc5b2d/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677261795f3664366436642e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png"></a><div class="section" id="id1">
+<h1>エラーハンドリング<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h1>
 <hr class="docutils" />
 <p><code class="docutils literal notranslate"><span class="pre">database/sql</span></code> を使ったほぼ全ての操作で、最後の値としてエラーを返します。常にエラーをチェックし、無視しないでください。</p>
 <p>エラーの動作が特殊な場合、あるいは知っておく必要のある追加事項がある場合がいくつかあります。</p>
@@ -72,15 +72,7 @@
 <span class="p">}</span>
 </pre></div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> で返されるエラーは、すべてのデータベースの操作でエラーを捕捉してチェックするのが最善であるという、一般的な規則の唯一の例外です。<code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> がエラーを返す場合、何をするべきであるかは不明です。エラーメッセージのロギングやpanicを起こすのが唯一できる賢明なことかもしれません。そうでない場合、エラーを無視する必要があるかもしれません。</p>
-<div class="admonition-todo admonition" id="id5">
-<p class="admonition-title">課題</p>
-<p>訳が不自然</p>
-<p><code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> で返されるエラーは、すべてのデータベースの操作でエラーを捕捉してチェックするのが最善であるという、一般的な規則の唯一の例外です。
-The error returned by <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> is the only exception to the
-general rule that it's best to capture and check for errors in all
-database operations.</p>
-</div>
+<p><code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> で返されるエラーは、エラーを捕捉してチェックするのが最善であるというよく知られた規則の、唯一の例外です。<code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> がエラーを返す場合、何をするべきであるかは不明です。エラーメッセージのロギングやpanicを起こすのが唯一できる賢明なことかもしれません。そうでない場合、エラーを無視する必要があるかもしれません。</p>
 </div>
 <div class="section" id="queryrow">
 <h2>QueryRow() からのエラー<a class="headerlink" href="#queryrow" title="このヘッドラインへのパーマリンク">¶</a></h2>
@@ -121,13 +113,12 @@ database operations.</p>
 </pre></div>
 </div>
 </div>
-<p>なぜ空の結果セットがエラーと見なされないのか疑問に思うかもしれません。空のセットについてエラーはありません。その理由は、<code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> メソッドは呼び出し元が <code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> が実際に行を見つけたか区別する必要があるため、この特殊なケースを使う必要があるためです。これがないと、<code class="docutils literal notranslate"><span class="pre">Scan()</span></code> は何も実行せず、変数がデータベースから値を取得できなかったことも気づかないかもしれません。</p>
+<p>なぜ空のリザルトセットをエラーと見なすのか疑問に思うかもしれません。空のセットについてエラーはありません。その理由は、<code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> メソッドは呼び出し元が <code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> が実際に行を見つけたか区別する必要があるため、この特殊なケースを使う必要があるためです。これがないと、<code class="docutils literal notranslate"><span class="pre">Scan()</span></code> は何も実行せず、変数がデータベースから値を取得できなかったことも気づかないかもしれません。</p>
 <p><code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> を使用している場合のみこのエラーが発生するでしょう。それ以外の場面でこのエラーが発生した場合、何が間違っていることをしているでしょう。</p>
 </div>
-<div class="section" id="id6">
-<h2>データベース固有のエラーの特定<a class="headerlink" href="#id6" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id5">
+<h2>データベース固有のエラーの特定<a class="headerlink" href="#id5" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>次のようなコードを書きたくなるかもしれません。</p>
-<p>It can be tempting to write code like the following:</p>
 <div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">rows</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">&quot;SELECT someval FROM sometable&quot;</span><span class="p">)</span>
 <span class="c1">// err contains:</span>
 <span class="c1">// ERROR 1045 (28000): Access denied for user &#39;foo&#39;@&#39;::1&#39; (using password: NO)</span>
@@ -136,11 +127,8 @@ database operations.</p>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>ただしこれは最善の方法ではありません。例えば、文字列の値はエラーメッセージを送信するときに使われるサーバの言語に依存します。エラー番号を比較して、特定のエラーが何であるか特定することをおすすめします。</p>
+<p>ただしこれは最善の方法ではありません。例えば、文字列はエラーメッセージを送信するときに使われるサーバの言語に依存します。エラー番号を比較して、特定のエラーが何であるか特定することをおすすめします。</p>
 <p>ただし、これは <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> パッケージそれ自体に含まれているわけではなく、ドライバーによって異なります。このチュートリアルが対象とするMySQLドライバーでは、次のコードを記述できます。</p>
-<p>The mechanism to do this varies between drivers, however, because this
-isn't part of <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> itself. In the MySQL driver that this
-tutorial focuses on, you could write the following code:</p>
 <div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="nx">driverErr</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">err</span><span class="p">.(</span><span class="o">*</span><span class="nx">mysql</span><span class="p">.</span><span class="nx">MySQLError</span><span class="p">);</span> <span class="nx">ok</span> <span class="p">{</span> <span class="c1">// Now the error number is accessible directly</span>
     <span class="k">if</span> <span class="nx">driverErr</span><span class="p">.</span><span class="nx">Number</span> <span class="o">==</span> <span class="mi">1045</span> <span class="p">{</span>
         <span class="c1">// Handle the permission-denied error</span>
@@ -158,8 +146,8 @@ tutorial focuses on, you could write the following code:</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="id8">
-<h2>コネクションエラーの扱い<a class="headerlink" href="#id8" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id7">
+<h2>コネクションエラーの扱い<a class="headerlink" href="#id7" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>データベースへの接続が切断、強制終了、またはエラーが発生した場合はどうなりますか？</p>
 <p>これが発生した場合は失敗したステートメントをリトライするロジックを実装する必要はありません。<code class="docutils literal notranslate"><span class="pre">database/sql</span></code> にある <a class="reference external" href="connection-pool.html">connection pooling</a> の一部として、失敗した接続の処理が組み込まれています。クエリや他のステートメントを実行し、コネクションに障害がある場合、Goは新しいコネクションを再度Openします。あるいはコネクションプールから別のコネクションを取得します。最大10回再試行します。</p>
 <p>ただし、意図しない結果が生じる可能性があります。 他のエラー状態が発生すると、一部のタイプのエラーが再試行される場合があります。 これはドライバー固有の場合もあります。 MySQLドライバーで発生した1つの例は、 <code class="docutils literal notranslate"><span class="pre">KILL</span></code> を使用して望ましくないステートメント(長時間実行されるクエリなど)をキャンセルすると、ステートメントが最大10回再試行されることです。</p>
@@ -180,12 +168,12 @@ tutorial focuses on, you could write the following code:</p>
     <h5><a href="index.html">GO DATABASE/SQL TUTORIAL</a></h5>
     <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="overview.html">概要</a></li>
-<li class="toctree-l1"><a class="reference internal" href="importing.html">データベースドライバのインポート</a></li>
+<li class="toctree-l1"><a class="reference internal" href="importing.html">ドライバのインポート</a></li>
 <li class="toctree-l1"><a class="reference internal" href="accessing.html">データベースへのアクセス</a></li>
 <li class="toctree-l1"><a class="reference internal" href="retrieving.html">リザルトセットの取得</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modifying.html">トランザクションを使ったデータの変更</a></li>
 <li class="toctree-l1"><a class="reference internal" href="prepared.html">プリペアードステートメント</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">エラーの扱い</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">エラーハンドリング</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nulls.html">NULLの使用</a></li>
 <li class="toctree-l1"><a class="reference internal" href="varcols.html">不明な列の操作</a></li>
 <li class="toctree-l1"><a class="reference internal" href="connection-pool.html">コネクションプール</a></li>

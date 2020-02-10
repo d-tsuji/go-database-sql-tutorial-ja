@@ -33,17 +33,13 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="id1">
+  <a href="https://github.com/d-tsuji/go-introduction-book"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/a6677b08c955af8400f44c6298f40e7d19cc5b2d/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677261795f3664366436642e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png"></a><div class="section" id="id1">
 <h1>トランザクションを使ったデータの変更<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h1>
 <hr class="docutils" />
-<p>これで、トランザクションを用いてデータを操作する準備が整いました。行のフェッチと同様にデータの更新に &quot;ステートメント&quot; オブジェクトを使う言語に慣れている人にとっては、フェッチをトランザクション操作を区別しているのは人為的と思うかもしれません。Goでは区別する重要な理由があります。</p>
+<p>これで、トランザクションを用いてデータを操作する準備が整いました。行のフェッチと同様にデータの更新に &quot;ステートメント&quot; オブジェクトを使う言語に慣れている人にとっては、フェッチをトランザクション操作と区別しているのはなにか理由があるのではないかと思うかもしれません。Goでは区別する重要な理由があります。</p>
 <div class="section" id="id2">
 <h2>データを変更するステートメント<a class="headerlink" href="#id2" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">INSERT</span></code>, <code class="docutils literal notranslate"><span class="pre">UPDATE</span></code>, <code class="docutils literal notranslate"><span class="pre">DELETE</span></code> やその他の行を返さないステートメントを実行するためには、できればリペアードステートメントで <code class="docutils literal notranslate"><span class="pre">Exec()</span></code> を使います。以下の例は、行をInsertし、操作に関するメタデータを検査する例を示します。</p>
-<p>Use <code class="docutils literal notranslate"><span class="pre">Exec()</span></code>, preferably with a prepared statement, to accomplish an
-<code class="docutils literal notranslate"><span class="pre">INSERT</span></code>, <code class="docutils literal notranslate"><span class="pre">UPDATE</span></code>, <code class="docutils literal notranslate"><span class="pre">DELETE</span></code>, or another statement that doesn't
-return rows. The following example shows how to insert a row and inspect
-metadata about the operation:</p>
 <div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">stmt</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Prepare</span><span class="p">(</span><span class="s">&quot;INSERT INTO users(name) VALUES(?)&quot;</span><span class="p">)</span>
 <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
     <span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
@@ -63,8 +59,8 @@ metadata about the operation:</p>
 <span class="nx">log</span><span class="p">.</span><span class="nx">Printf</span><span class="p">(</span><span class="s">&quot;ID = %d, affected = %d\n&quot;</span><span class="p">,</span> <span class="nx">lastId</span><span class="p">,</span> <span class="nx">rowCnt</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>ステートメントを実行すると、ステートメントのメタデー(例えば最後似挿入したIDや影響があった行数など)へアクセスできる <code class="docutils literal notranslate"><span class="pre">sql.Result</span></code> オブジェクトが生成されます。</p>
-<p>結果を木にする必要がない場合はどうすればよいでしょうか。ステートメントを実行してエラーをチェックしたいだけで、結果を無視したい場合はどうでしょうか。次の2つのステートメントは同じように振る舞うでしょうか？</p>
+<p>ステートメントを実行すると、ステートメントのメタデータ(例えば最後似挿入したIDや影響があった行数など)へアクセスできる <code class="docutils literal notranslate"><span class="pre">sql.Result</span></code> オブジェクトが生成されます。</p>
+<p>結果を気にする必要がない場合はどうすればよいでしょうか。ステートメントを実行してエラーをチェックしたいだけで、結果を無視したい場合はどうでしょうか。次の2つのステートメントは同じように振る舞うでしょうか？</p>
 <div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Exec</span><span class="p">(</span><span class="s">&quot;DELETE FROM users&quot;</span><span class="p">)</span>  <span class="c1">// OK</span>
 <span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">&quot;DELETE FROM users&quot;</span><span class="p">)</span> <span class="c1">// BAD</span>
 </pre></div>
@@ -115,12 +111,12 @@ transaction.</p>
     <h5><a href="index.html">GO DATABASE/SQL TUTORIAL</a></h5>
     <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="overview.html">概要</a></li>
-<li class="toctree-l1"><a class="reference internal" href="importing.html">データベースドライバのインポート</a></li>
+<li class="toctree-l1"><a class="reference internal" href="importing.html">ドライバのインポート</a></li>
 <li class="toctree-l1"><a class="reference internal" href="accessing.html">データベースへのアクセス</a></li>
 <li class="toctree-l1"><a class="reference internal" href="retrieving.html">リザルトセットの取得</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">トランザクションを使ったデータの変更</a></li>
 <li class="toctree-l1"><a class="reference internal" href="prepared.html">プリペアードステートメント</a></li>
-<li class="toctree-l1"><a class="reference internal" href="errors.html">エラーの扱い</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">エラーハンドリング</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nulls.html">NULLの使用</a></li>
 <li class="toctree-l1"><a class="reference internal" href="varcols.html">不明な列の操作</a></li>
 <li class="toctree-l1"><a class="reference internal" href="connection-pool.html">コネクションプール</a></li>
