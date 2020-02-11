@@ -82,7 +82,7 @@
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">rows.Next()</span></code> のループの最後に必ずエラーをチェックする必要があります。ループ中にエラーが発生した場合、エラーについて知る必要があります。すべての行を処理するまで、ループが繰り返されるわけではありません。</p></li>
 <li><p>次にリザルトセット(上記の例では <code class="docutils literal notranslate"><span class="pre">rows</span></code> 変数に該当)が開いている限り、コネクションはビジーで、他のクエリには使用できません。つまりコネクションプールとしては使用できないということです。<code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code> ですべての行が反復処理され、最後の行を読み込むと <code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code> で内部的に EOF エラーが発生し、 <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> が呼び出されます。ただし、なんらかの理由で早期リターンなどといったループの途中で終了するとリザルトセットはCloseされず、コネクションはOpenしたまま残ります。 <code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code> がエラーのためにfalseを返す場合は自動的に閉じられます。容易にリソースの枯渇を導きます。</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> はすでにリザルトセットが閉じられていても無害な操作になるため、何度も呼び出すことができます。ただし、実行時のpanicを避けるために、エラーをチェックし、エラーがないときのみ  <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> を呼び出すことに注意してください。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> はすでにリザルトセットが閉じられていても無害な操作になるため、何度も呼び出すことができます。ただし、実行時のpanicを避けるために、エラーをチェックし、エラーがないときのみ  <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> を呼び出すことに注意してください。<a class="footnote-reference brackets" href="#id6" id="id3">1</a></p></li>
 <li><p>ループの最後で明示的に <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> を呼び出す場合でも常に <code class="docutils literal notranslate"><span class="pre">defer</span> <span class="pre">rows.Close()</span></code> を実装すべきです。これは悪い考えではありません。</p></li>
 <li><p>ループの中で <code class="docutils literal notranslate"><span class="pre">defer</span></code> を呼ばないでください。<code class="docutils literal notranslate"><span class="pre">defer</span></code> ステートメントは関数が終了するまで実行されません。そのため長時間実行される関数では使うべきではありません。使用すると少しずつメモリ使用量が増えます。繰り返しクエリを発行し、ループ内で結果を処理する場合は、それぞれの結果を処理したときに、明示的に <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> を呼び出し <code class="docutils literal notranslate"><span class="pre">defer</span></code> を使うべきではありません。</p></li>
 </ul>
@@ -93,8 +93,8 @@
 <p>例えば、<code class="docutils literal notranslate"><span class="pre">VARCHAR(45)</span></code> などの文字列のカラムとして定義されたテーブルからいくつかの行をフェッチするとします。ただしテーブルには常に数値を含んでいるとします。文字列にポインタを渡すと、Goはバイトを文字列にコピーします。これで <code class="docutils literal notranslate"><span class="pre">strconv.ParseInt()</span></code> などを用いて値を数値に変換することができます。SQL操作のエラーをチェックする必要があり、また整数の解析エラーをチェックする必要があります。これは面倒で退屈です。</p>
 <p>その代わりに、単に <code class="docutils literal notranslate"><span class="pre">Scan()</span></code> を数値へのポインタに渡すことができます。Goは数値であることを検出して <code class="docutils literal notranslate"><span class="pre">strconv.ParseInt()</span></code> を呼び出します。変換時にエラーが発生した場合、<code class="docutils literal notranslate"><span class="pre">Scan()</span></code> を呼び出すとエラーが返されます。コードはすっきりと小さくなりました。これは <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> の推奨される使い方です。</p>
 </div>
-<div class="section" id="id3">
-<h2>クエリの準備<a class="headerlink" href="#id3" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id4">
+<h2>クエリの準備<a class="headerlink" href="#id4" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>一般に、複数回クエリを発行するためにクエリを予め準備する必要があります。クエリを準備した結果はプリペアードステートメントとなります。このステートメントはプレースホルダ(別名バインド値)としてステートメントの実行時に指定するパラメータを含めることができます。これはあらゆる理由(例えばSQLインジェクショ攻撃を回避するなど)で、文字列を結合するよりもはるかに優れています。</p>
 <p>MySQLではパラメータのプレースホルダは <code class="docutils literal notranslate"><span class="pre">?</span></code> です。PostgreSQLでは <code class="docutils literal notranslate"><span class="pre">$N</span></code> (Nは数値)です。SQLiteではどちらでもOKです。Oracleのプレースホルダの場合は <code class="docutils literal notranslate"><span class="pre">:param1</span></code> といったコロンと名前から始まる必要がありません。今回の例ではMySQL を用いるため、プレースホルダには <code class="docutils literal notranslate"><span class="pre">?</span></code> を使用します。</p>
 <div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">stmt</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Prepare</span><span class="p">(</span><span class="s">&quot;select id, name from users where id = ?&quot;</span><span class="p">)</span>
@@ -117,8 +117,8 @@
 </div>
 <p>内部的には <code class="docutils literal notranslate"><span class="pre">db.Query()</span></code> は実際にプリペアードステートメントを準備し、実行、閉じることをします。これはデータベースへの3回のやりとりです。注意を怠ると、アプリケーションが行うデータベースとのやりとりが3倍になります。いくつかのドライバーは特定の場合に回避することができますが、すべてのドライバーが回避できるわけではありません。詳細は <a class="reference external" href="prepared.html">prepared statements</a> を参照してください。</p>
 </div>
-<div class="section" id="id4">
-<h2>単一の行のクエリ<a class="headerlink" href="#id4" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id5">
+<h2>単一の行のクエリ<a class="headerlink" href="#id5" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>クエリが高々1行しか返さない場合、長々とした定型的なコードの代わりにショートカットを使うことができます。</p>
 <div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kd">var</span> <span class="nx">name</span> <span class="kt">string</span>
 <span class="nx">err</span> <span class="p">=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">QueryRow</span><span class="p">(</span><span class="s">&quot;select name from users where id = ?&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">).</span><span class="nx">Scan</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>
@@ -146,6 +146,11 @@
 <div class="line">前に戻る: <a class="reference external" href="accessing.html">Accessing the Database</a></div>
 <div class="line">次に進む:<a class="reference external" href="modifying.html">Modifying Data and Using Transactions</a></div>
 </div>
+<dl class="footnote brackets">
+<dt class="label" id="id6"><span class="brackets"><a class="fn-backref" href="#id3">1</a></span></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">rows</span></code> がnilの場合に <code class="docutils literal notranslate"><span class="pre">defer</span> <span class="pre">rows.Close()</span></code> を呼び出すとnilポインターによるpanicが起こり、関数が終了します。</p>
+</dd>
+</dl>
 </div>
 </div>
 
