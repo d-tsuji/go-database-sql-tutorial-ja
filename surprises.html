@@ -37,54 +37,59 @@
 <h1>驚き/アンチパターン/制限<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h1>
 <hr class="docutils" />
 <p><code class="docutils literal notranslate"><span class="pre">database/sql</span></code> は慣れれば簡単ですが、サポートするユースケースの微妙さに驚くかもしれません。これはGoのコアライブラリに共通です。</p>
-<div class="section" id="id2">
-<h2>リソースの枯渇<a class="headerlink" href="#id2" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="admonition-todo admonition" id="id2">
+<p class="admonition-title">課題</p>
+<p>subtlety の訳は何になるか？「微妙さ」ではない気がする</p>
+<p>Although database/sql is simple once you’re accustomed to it, you might be surprised by the subtlety of use cases it supports. This is common to Go’s core libraries.</p>
+</div>
+<div class="section" id="id3">
+<h2>リソースの枯渇<a class="headerlink" href="#id3" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>このサイト全体で言及したように、意図したとおりに <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> を使用しない場合、通常はリソースを消費するか、リソースの効果的な再利用を妨げることにより、問題を引き起こす可能性があります。</p>
 <ul class="simple">
 <li><p>データベースを開いたり閉じたりすると、リソースが枯渇する可能性があります。</p></li>
-<li><p>すべての行を読み取らないか <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> を使用しないと、プールからの接続が確保されたままになります。</p></li>
+<li><p>すべての行の読み取りに失敗したり <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> を使用しないと、プールからの接続が確保されたままになります。</p></li>
 <li><p>行を返さないステートメントに <code class="docutils literal notranslate"><span class="pre">Query</span></code> を使用すると、プールからの接続が確保されたままになります。</p></li>
-<li><p><a class="reference external" href="prepared.html">プリペアードステートメント</a> がどのように動作するかを認識しないと、多くの余分なデータベースアクティビティが発生する可能性があります。</p></li>
+<li><p><a class="reference external" href="prepared.html">プリペアードステートメント</a> がどのように動作するかを認識しないと、データベースで大量の無駄な動作が発生する可能性があります。</p></li>
 </ul>
 </div>
 <div class="section" id="uint64">
-<h2>大きな uint64 値<a class="headerlink" href="#uint64" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>これは驚くべきエラーです。大きなビットが設定されている場合、ステートメントに大きな符号なし整数をパラメーターとして渡すことはできません。</p>
+<h2>uint64の大きな値<a class="headerlink" href="#uint64" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>これは驚くべきエラーです。大きな unit64 で上位ビットが設定されている場合、ステートメントにパラメーターとして渡すことはできません。</p>
 <div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Exec</span><span class="p">(</span><span class="s">&quot;INSERT INTO users(id) VALUES&quot;</span><span class="p">,</span> <span class="nx">math</span><span class="p">.</span><span class="nx">MaxUint64</span><span class="p">)</span> <span class="c1">// Error</span>
 </pre></div>
 </div>
-<p>これはエラーをスローします。 <code class="docutils literal notranslate"><span class="pre">uint64</span></code> 値を使用する場合は注意してください。小さな値から始まり、エラーなしで機能しますが、時間の経過とともに増分してエラーをスローし始める可能性があります。</p>
+<p>これはエラーが発生します。 <code class="docutils literal notranslate"><span class="pre">uint64</span></code> 値を使用する場合は注意してください。小さな値から始まり、エラーなしで機能しますが、時間の経過とともに値が増加するとエラーが発生し始める可能性があります。</p>
 </div>
-<div class="section" id="id4">
-<h2>コネクション状態の不一致<a class="headerlink" href="#id4" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id5">
+<h2>コネクション状態の不一致<a class="headerlink" href="#id5" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>コネクションの状態を変更できるいくつかの操作がありますが、それは次の2つの理由で問題を引き起こす可能性があります。</p>
 <ol class="arabic simple">
 <li><p>トランザクション内かどうかなどの、一部のコネクションの状態は、Goの型を介して処理する必要があります。</p></li>
-<li><p>クエリが実行されていないときに、クエリが単一の接続で実行されると仮定している場合があります。</p></li>
+<li><p>実際にはクエリは複数のコネクションで実行されていたとしても、クエリが単一の接続で実行されていると思う場合があります。</p></li>
 </ol>
-<p>たとえば、<code class="docutils literal notranslate"><span class="pre">USE</span></code> ステートメントを使用して現在のデータベースを設定することは、一般的なことです。 ただし、Goでは、実行中の接続のみに影響します。トランザクション中でない限り、その接続で実行されると思われる他のステートメントは、プールから取得した異なる接続で実際に実行される可能性があるため、そのような変更の影響は見られません。</p>
-<p>また、接続を変更すると、プールに戻り、他のコードの状態を潜在的に汚染します。これは <code class="docutils literal notranslate"><span class="pre">BEGIN</span></code> または <code class="docutils literal notranslate"><span class="pre">COMMIT</span></code> ステートメントをSQLコマンドとして直接発行しないでください理由の1つです。</p>
+<p>たとえば、<code class="docutils literal notranslate"><span class="pre">USE</span></code> ステートメントを使用して現在のデータベースを設定することは、一般的なことです。 ただし、Goでは、実行中のコネクションのみに影響します。トランザクション中でない限り、そのコネクションで実行されると思っていたが、プールから取得した別のコネクションで実際に実行される場合、そのような変更の影響を受けません。</p>
+<p>また、コネクションを変更すると、プールに戻り、他のコードの状態を潜在的に汚染します。これは <code class="docutils literal notranslate"><span class="pre">BEGIN</span></code> または <code class="docutils literal notranslate"><span class="pre">COMMIT</span></code> ステートメントをSQLコマンドとして直接発行してはいけない理由の1つです。</p>
 </div>
-<div class="section" id="id5">
-<h2>データベース固有の構文<a class="headerlink" href="#id5" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id6">
+<h2>データベース固有の構文<a class="headerlink" href="#id6" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">database/sql</span></code> のAPIは行指向データベースの抽象化を提供しますが、特定のデータベースとドライバーは、<a class="reference external" href="prepared.html">プリペアドステートメントのプレースホルダー</a> などの動作や構文が異なる場合があります。</p>
 </div>
-<div class="section" id="id7">
-<h2>複数のリザルトセット<a class="headerlink" href="#id7" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>Goドライバーは、単一のクエリからの複数のリザルトセットをサポートしていません。バルクコピーなどのバルク操作をサポートするための <a class="reference external" href="https://github.com/golang/go/issues/5171">機能要求</a> はありますが、それを行う計画はないようです。</p>
+<div class="section" id="id8">
+<h2>複数のリザルトセット<a class="headerlink" href="#id8" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>Goドライバーは、単一のクエリからの複数のリザルトセットをサポートしていません。バルクコピーなどの一括操作をサポートするための <a class="reference external" href="https://github.com/golang/go/issues/5171">機能要求</a> はありますが、機能に追加する予定はないようです。</p>
 <p>これは、特に、複数のリザルトセットを返すストアドプロシージャが正しく機能しないことを意味します。</p>
 </div>
-<div class="section" id="id9">
-<h2>ストアドプロシージャの呼び出し<a class="headerlink" href="#id9" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id10">
+<h2>ストアドプロシージャの呼び出し<a class="headerlink" href="#id10" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>ストアドプロシージャの呼び出しはドライバー固有ですが、MySQLドライバーでは現在実行できません。 次のようなものを実行することで、単一のリザルトセットを返す簡単なプロシージャを呼び出すことができるように思えるかもしれません。</p>
 <div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">QueryRow</span><span class="p">(</span><span class="s">&quot;CALL mydb.myprocedure&quot;</span><span class="p">).</span><span class="nx">Scan</span><span class="p">(</span><span class="nx">result</span><span class="p">)</span> <span class="c1">// Error</span>
 </pre></div>
 </div>
-<p>実際、これは機能しません。 次のエラーが表示されます。 <em>エラー1312</em> ：プロシージャmydb.myprocedureは、指定されたコンテキストでリザルトセットを返すことができません。 これは、MySQLは、単一の結果であっても、接続がマルチステートメントモードに設定されることを期待しており、ドライバーが現在それを行っていないためです(<a class="reference external" href="https://github.com/go-sql-driver/mysql/issues/66">この問題</a> を参照)。</p>
+<p>実際、これは機能しません。 次のエラーが表示されます。「 <code class="docutils literal notranslate"><span class="pre">Error</span> <span class="pre">1312:</span> <span class="pre">PROCEDURE</span> <span class="pre">mydb.myprocedure</span> <span class="pre">can’t</span> <span class="pre">return</span> <span class="pre">a</span> <span class="pre">result</span> <span class="pre">set</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">given</span> <span class="pre">context.</span></code> 」 これは、MySQLは、単一の結果であっても、接続がマルチステートメントモードに設定されることを期待しており、ドライバーが現在サポートしていないです(<a class="reference external" href="https://github.com/go-sql-driver/mysql/issues/66">この問題</a> を参照してください)。</p>
 </div>
-<div class="section" id="id11">
-<h2>複数ステートメントのサポート<a class="headerlink" href="#id11" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">database/sql</span></code> は複数のステートメントを明示的にサポートしていません。つまり、この動作はバックエンドに依存しています。</p>
+<div class="section" id="id12">
+<h2>複数ステートメントのサポート<a class="headerlink" href="#id12" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">database/sql</span></code> は複数のステートメントを明示的にサポートしていません。つまり、この動作はバックエンドのデータベースに依存しています。</p>
 <div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Exec</span><span class="p">(</span><span class="s">&quot;DELETE FROM tbl1; DELETE FROM tbl2&quot;</span><span class="p">)</span> <span class="c1">// Error/unpredictable result</span>
 </pre></div>
 </div>
@@ -108,14 +113,10 @@
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>ただし、Goを試してみることはできません。 そのため、最初のステートメントがリソースを解放してからクリーンアップする前に別のステートメントを実行しようとすると、コネクションが破損する可能性があります。 これは、トランザクション内の各ステートメントが、データベースへのネットワークラウンドトリップの個別のセットをもたらすことも意味します。</p>
+<p>ただし、Goは試すことを止めるわけではありません。 そのため、最初のステートメントがリソースを解放してからクリーンアップする前に別のステートメントを実行しようとすると、コネクションが破損する可能性があります。 これは、トランザクション内の各ステートメントが、データベースへの別々のネットワーク通信となることを意味します。</p>
 <div class="line-block">
 <div class="line">前に戻る: <a class="reference external" href="connection-pool.html">The Connection Pool</a></div>
 <div class="line">次に進む: <a class="reference external" href="references.html">Related Reading and Resources</a></div>
-</div>
-<div class="admonition-todo admonition" id="id12">
-<p class="admonition-title">課題</p>
-<p>全体的に見直す</p>
 </div>
 </div>
 </div>

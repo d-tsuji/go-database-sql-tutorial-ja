@@ -43,7 +43,7 @@
 <li><p>繰り返し使用するための準備をせずに、一度だけのステートメントを実行します。</p></li>
 <li><p>単一の行を返すクエリを発行します。この場合はショートカットがあります。</p></li>
 </ol>
-<p>Goの <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> の関数名は重要です。関数名に <code class="docutils literal notranslate"><span class="pre">Query</span></code> という文字を含んでいれば、データベースにクエリを発行し、空行も可能な行の集合を返すために設計されているとわかります。行を返さないステートメントの場合、 <code class="docutils literal notranslate"><span class="pre">Query</span></code> 関数名を使うべきではなく、 <code class="docutils literal notranslate"><span class="pre">Exec()</span></code> を用いるべきです。</p>
+<p>Goの <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> の関数名は重要です。関数名に <code class="docutils literal notranslate"><span class="pre">Query</span></code> という文字を含んでいれば、データベースにクエリを発行し、(空行も許す)行の集合を返すために設計されているとわかります。行を返さないステートメントの場合、 <code class="docutils literal notranslate"><span class="pre">Query</span></code> 関数を使うべきではなく <code class="docutils literal notranslate"><span class="pre">Exec()</span></code> を用いるべきです。</p>
 <div class="section" id="id2">
 <h2>データベースからのデータの取得<a class="headerlink" href="#id2" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>データベースにクエリを発行して、結果を取得する方法の例を見てみましょう。<code class="docutils literal notranslate"><span class="pre">user</span></code> テーブルから <code class="docutils literal notranslate"><span class="pre">id</span></code> が1であるユーザを取得し、<code class="docutils literal notranslate"><span class="pre">id</span></code> と <code class="docutils literal notranslate"><span class="pre">name</span></code> を表示します。<code class="docutils literal notranslate"><span class="pre">rows.Scan()</span></code> を使用して1度に1行ずつ、変数に結果を割り当てます。</p>
@@ -69,10 +69,6 @@
 <span class="p">}</span>
 </pre></div>
 </div>
-<div class="admonition note">
-<p class="admonition-title">注釈</p>
-<p>上記の実装ではエラーがあった場合に <code class="docutils literal notranslate"><span class="pre">log.Fatal(err)</span></code> としていますが、実践的には呼び出し元に <code class="docutils literal notranslate"><span class="pre">return</span> <span class="pre">err</span></code> するなどして、より適切にハンドリングすべきです</p>
-</div>
 <p>上記のコードで行われていることは次のとおりです。</p>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">db.Query()</span></code> を用いてデータベースにクエリを発行します。そしてエラーをチェックします。</p></li>
@@ -81,25 +77,25 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">rows.Scan()</span></code> を用いて、それぞれの行のカラムを結果を変数に読み込みます。</p></li>
 <li><p>行の反復処理が完了したら、エラーをチェックします。</p></li>
 </ol>
-<p>これはGoで行う唯一の方法です。たとえば行をmapとして取得することはできません。なぜならすべてが強く型付けされているためです。次に示すように、適切な型の変数を宣言し、ポインタとして渡す必要があります。</p>
-<p>上記の処理は間違えやすく、悪い結果になる可能性があります。</p>
+<p>これはGoで行う唯一の方法です。たとえば行を連想配列として取得することはできません。なぜならすべてが強く型付けされているためです。次に示すように、適切な型の変数を宣言し、ポインタとして渡す必要があります。</p>
+<p>上記の処理は間違えやすく、予期せぬ結果を招く可能性があります。</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">rows.Next()</span></code> のループの最後に必ずエラーをチェックする必要があります。ループ中にエラーが発生した場合、エラーについて知る必要があります。すべての行を処理するまで、ループが繰り返されるわけではありません。</p></li>
-<li><p>次にリザルトセットがOpenしている限り、コネクションがビジーで、他のクエリには使用できません。つまりコネクションプールとしては使用できないということです。<code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code> ですべての行が反復処理され、最後の行を読み込むと <code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code> で内部的に EOF エラーが発生し、 <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> が呼び出されます。ただし、なんらかの理由で早期のreturnなどといったループの途中で終了するとリザルトセットはCloseされず、コネクションはOpenしたまま残ります。 <code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code> がエラーのためにfalseを返す場合は自動的にCloseされます。これはリソースを使い果たす簡単な方法です。</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> はすでにCloseされていても無害な操作になるため、何度も呼び出すことができます。ただし、実行時のpanicを避けるために、エラーをチェックし、エラーがないときのみ  <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> を呼び出すことに注意してください。</p></li>
+<li><p>次にリザルトセット(上記の例では <code class="docutils literal notranslate"><span class="pre">rows</span></code> 変数に該当)が開いている限り、コネクションはビジーで、他のクエリには使用できません。つまりコネクションプールとしては使用できないということです。<code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code> ですべての行が反復処理され、最後の行を読み込むと <code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code> で内部的に EOF エラーが発生し、 <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> が呼び出されます。ただし、なんらかの理由で早期リターンなどといったループの途中で終了するとリザルトセットはCloseされず、コネクションはOpenしたまま残ります。 <code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code> がエラーのためにfalseを返す場合は自動的に閉じられます。容易にリソースの枯渇を導きます。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> はすでにリザルトセットが閉じられていても無害な操作になるため、何度も呼び出すことができます。ただし、実行時のpanicを避けるために、エラーをチェックし、エラーがないときのみ  <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> を呼び出すことに注意してください。</p></li>
 <li><p>ループの最後で明示的に <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> を呼び出す場合でも常に <code class="docutils literal notranslate"><span class="pre">defer</span> <span class="pre">rows.Close()</span></code> を実装すべきです。これは悪い考えではありません。</p></li>
-<li><p>ループの中で <code class="docutils literal notranslate"><span class="pre">defer</span></code> を呼ばないでください。<code class="docutils literal notranslate"><span class="pre">defer</span></code> ステートメントは関数が終了するまで実行されません。そのため長時間実行される関数では使うべきではありません。使用すると少しずつメモリ使用量が増えます。繰り返しクエリを発行し、ループ内で結果を処理する場合は、それぞれの結果を処理したときに明示的に <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> を呼び出し、<code class="docutils literal notranslate"><span class="pre">defer</span></code> を使うべきではありません。</p></li>
+<li><p>ループの中で <code class="docutils literal notranslate"><span class="pre">defer</span></code> を呼ばないでください。<code class="docutils literal notranslate"><span class="pre">defer</span></code> ステートメントは関数が終了するまで実行されません。そのため長時間実行される関数では使うべきではありません。使用すると少しずつメモリ使用量が増えます。繰り返しクエリを発行し、ループ内で結果を処理する場合は、それぞれの結果を処理したときに、明示的に <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> を呼び出し <code class="docutils literal notranslate"><span class="pre">defer</span></code> を使うべきではありません。</p></li>
 </ul>
 </div>
 <div class="section" id="scan">
 <h2>Scan() の動作方法<a class="headerlink" href="#scan" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>行を反復処理し、結果を変数にスキャンすると、Goはバックグラウンドでデータ型の変換を行います。これは結果を格納する変数の型に基づいています。これに注意することで、コードをきれいにし、繰り返しの作業を避けることができます。</p>
-<p>例えば、<code class="docutils literal notranslate"><span class="pre">VARCHAR(45)</span></code> などの文字列のカラムとして定義されたテーブルからいくつかの行をselectするとします。ただしテーブルには常に数値を含んでいるとします。文字列にポインタを渡すと、Goはバイトを文字列にコピーします。これで <code class="docutils literal notranslate"><span class="pre">strconv.ParseInt()</span></code> などを用いて値を数値に変換することができます。SQL操作のエラーをチェックする必要があり、また整数の解析エラーをチェックする必要があります。これは面倒で退屈です。</p>
+<p>行を反復処理し、結果を変数にスキャンすると、Goは内部でデータ型の変換を行います。これは結果を格納する変数の型に基づいています。これに注意することで、コードをきれいにし、繰り返しの作業を避けることができます。</p>
+<p>例えば、<code class="docutils literal notranslate"><span class="pre">VARCHAR(45)</span></code> などの文字列のカラムとして定義されたテーブルからいくつかの行をフェッチするとします。ただしテーブルには常に数値を含んでいるとします。文字列にポインタを渡すと、Goはバイトを文字列にコピーします。これで <code class="docutils literal notranslate"><span class="pre">strconv.ParseInt()</span></code> などを用いて値を数値に変換することができます。SQL操作のエラーをチェックする必要があり、また整数の解析エラーをチェックする必要があります。これは面倒で退屈です。</p>
 <p>その代わりに、単に <code class="docutils literal notranslate"><span class="pre">Scan()</span></code> を数値へのポインタに渡すことができます。Goは数値であることを検出して <code class="docutils literal notranslate"><span class="pre">strconv.ParseInt()</span></code> を呼び出します。変換時にエラーが発生した場合、<code class="docutils literal notranslate"><span class="pre">Scan()</span></code> を呼び出すとエラーが返されます。コードはすっきりと小さくなりました。これは <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> の推奨される使い方です。</p>
 </div>
 <div class="section" id="id3">
 <h2>クエリの準備<a class="headerlink" href="#id3" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>一般に、複数回クエリを発行するためにクエリの準備をする必要があります。クエリを準備した結果はプリペアードステートメントとなります。このステートメントはプレースホルダ(別名バインド値)としてステートメントの実行時に指定するパラメータを含めることができます。これはすべての理由(例えばSQLインジェクショ攻撃を回避するなど)で、文字列を結合するよりもはるかに優れています。</p>
+<p>一般に、複数回クエリを発行するためにクエリを予め準備する必要があります。クエリを準備した結果はプリペアードステートメントとなります。このステートメントはプレースホルダ(別名バインド値)としてステートメントの実行時に指定するパラメータを含めることができます。これはあらゆる理由(例えばSQLインジェクショ攻撃を回避するなど)で、文字列を結合するよりもはるかに優れています。</p>
 <p>MySQLではパラメータのプレースホルダは <code class="docutils literal notranslate"><span class="pre">?</span></code> です。PostgreSQLでは <code class="docutils literal notranslate"><span class="pre">$N</span></code> (Nは数値)です。SQLiteではどちらでもOKです。Oracleのプレースホルダの場合は <code class="docutils literal notranslate"><span class="pre">:param1</span></code> といったコロンと名前から始まる必要がありません。今回の例ではMySQL を用いるため、プレースホルダには <code class="docutils literal notranslate"><span class="pre">?</span></code> を使用します。</p>
 <div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">stmt</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Prepare</span><span class="p">(</span><span class="s">&quot;select id, name from users where id = ?&quot;</span><span class="p">)</span>
 <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
@@ -119,7 +115,7 @@
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>内部的には <code class="docutils literal notranslate"><span class="pre">db.Query()</span></code> は実際にプリペアードステートメントの準備、実行、Closeをします。これはデータベースへの3回の往復です。注意を怠ると、アプリケーションが行うデータベースとのやりとりが3倍になります。いくつかのドライバーは特定の場合に回避することができますが、すべてのドライバーが回避できるわけではありません。詳細は <a class="reference external" href="prepared.html">prepared statements</a> を参照してください。</p>
+<p>内部的には <code class="docutils literal notranslate"><span class="pre">db.Query()</span></code> は実際にプリペアードステートメントを準備し、実行、閉じることをします。これはデータベースへの3回のやりとりです。注意を怠ると、アプリケーションが行うデータベースとのやりとりが3倍になります。いくつかのドライバーは特定の場合に回避することができますが、すべてのドライバーが回避できるわけではありません。詳細は <a class="reference external" href="prepared.html">prepared statements</a> を参照してください。</p>
 </div>
 <div class="section" id="id4">
 <h2>単一の行のクエリ<a class="headerlink" href="#id4" title="このヘッドラインへのパーマリンク">¶</a></h2>

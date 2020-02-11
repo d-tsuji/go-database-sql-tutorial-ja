@@ -40,7 +40,7 @@
 <div class="section" id="id2">
 <h2>プリペアードステートメントとコネクション<a class="headerlink" href="#id2" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>データベースのレイヤーでは、プリペアードステートメントは単一のデータベース接続に紐付けられます。典型的な流れは、クライアントがプレースホルダ付きのSQLステートメントをサーバーに準備として送信します。サーバーからはステートメントIDがレスポンスとして返ってきて、クライアントはレスポンスIDとパラメータを送信することでステートメントを実行します。</p>
-<p>しかしGoでは <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> パッケージのユーザーには直接コネクションが公開されることはありません。接続に関するステートメントを準備する必要はありません。<code class="docutils literal notranslate"><span class="pre">DB</span></code> or a <code class="docutils literal notranslate"><span class="pre">Tx</span></code> を用いて準備します。そして <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> は自動リトライなどのいくつかの便利な機能があります。これらの理由によってドライバーのレイヤで存在するプリペアードステートメントとコネクションの紐付けは、コードには表れません。</p>
+<p>しかしGoでは <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> パッケージのユーザーには直接コネクションが公開されることはありません。接続に関するステートメントを準備する必要はありません。<code class="docutils literal notranslate"><span class="pre">DB</span></code> や <code class="docutils literal notranslate"><span class="pre">Tx</span></code> を用いて準備します。そして <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> は自動リトライなどのいくつかの便利な機能があります。これらの理由によってドライバーのレイヤで存在するプリペアードステートメントとコネクションの紐付けは、アプリケーションの実装には表れません。</p>
 <p>仕組みは次のとおりです。</p>
 <ol class="arabic simple">
 <li><p>ステートメントを準備すると、プールからコネクションが準備されます。</p></li>
@@ -50,24 +50,18 @@
 <p>元のコネクションがビジーの場合、必要に応じてステートメントは再準備されます。多数の接続がビジー状態のままになるような高い並列度で使用することができ、たくさんのプリペアードステートメントを作成することができます。これにより、ステートメントのリークをもたらす可能性があります。予想よりも頻繁に再準備され、サーバー側ではステートメントの数が制限されることさえあります。</p>
 </div>
 <div class="section" id="id3">
-<h2>プリペアードステートメントの回避<a class="headerlink" href="#id3" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>Goは内部でプリペアードステートメントを作成します。簡単な例として <code class="docutils literal notranslate"><span class="pre">db.Query(sql,</span> <span class="pre">param1,</span> <span class="pre">param2)</span></code> はSQLを準備し、パラメータを受け取って実行され、ステートメントは閉じられることで機能します。</p>
+<h2>プリペアードステートメントを使わない場合<a class="headerlink" href="#id3" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>Goは内部でプリペアードステートメントを作成します。簡単な例として <code class="docutils literal notranslate"><span class="pre">db.Query(sql,</span> <span class="pre">param1,</span> <span class="pre">param2)</span></code> はSQLを準備し、パラメータを受け取って実行され、ステートメントが閉じられることで機能します。</p>
 <p>いくつかの場面で、プリペアードステートメントが必要でない場合もあります。以下の理由によるものです。</p>
 <ol class="arabic simple">
-<li><p>データベースがプリペアードステートメントをサポートしていない場合。例えばMySQLドライバーを使ってMemSQLやSphinxに接続することができますが、これはMySQLのWireプロトコルをサポートしているためです。しかしプリペアードステートメントを含む、&quot;バイナリ&quot; のプロトコルはサポートしていないため、わかりにくい理由で失敗することがあります。</p></li>
+<li><p>データベースがプリペアードステートメントをサポートしていない場合。例えばMySQLドライバーを使ってMemSQLやSphinxに接続することができますが、これはMySQLのWireプロトコルをサポートしているためです。しかしプリペアードステートメントを含む「バイナリ」のプロトコルはサポートしていないため、わかりにくい理由で失敗することがあります。</p></li>
 <li><p>ステートメントは再利用する価値がなく、セキュリティの問題は別の方法で扱われる場合です。プリペアードステートメントはパフォーマンスの観点で望ましくないためです。この例は <a class="reference external" href="https://vividcortex.com/blog/2014/11/19/analyzing-prepared-statement-performance-with-vividcortex/">VividCortex blog</a> で見ることができます。</p></li>
 </ol>
 <p>プリペアードステートメントを使用したくない場合は、<code class="docutils literal notranslate"><span class="pre">fmt.Sprint()</span></code> などを用いてSQLを組み立てる必要があり、<code class="docutils literal notranslate"><span class="pre">db.Query()</span></code> や <code class="docutils literal notranslate"><span class="pre">db.QueryRow()</span></code> に唯一の引数として渡す必要があります。またドライバーは素のテキストクエリの実行をサポートする必要があります。これはGo1.1で追加された <code class="docutils literal notranslate"><span class="pre">Execer</span></code> や <code class="docutils literal notranslate"><span class="pre">Queryer</span></code> インターフェースを実装します。詳細は <a class="reference external" href="http://golang.org/pkg/database/sql/driver/#Execer">documented here</a> を参照ください。</p>
 </div>
 <div class="section" id="id4">
 <h2>トランザクション内でのプリペアードステートメント<a class="headerlink" href="#id4" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">Tx</span></code> 内で作成されたプリペアードステートメントは <code class="docutils literal notranslate"><span class="pre">Tx</span></code> のみに紐付いているため、再準備に関する以前の注意事項は適用されません。<code class="docutils literal notranslate"><span class="pre">Tx</span></code> オブジェクトを操作する場合、その操作はバックグラウンドの唯一のコネクションにのみ直接マッピングされます。</p>
-<div class="admonition note">
-<p class="admonition-title">注釈</p>
-<p>訳を改善する。
-<code class="docutils literal notranslate"><span class="pre">Tx</span></code> 内で作成されたプリペアードステートメントは <code class="docutils literal notranslate"><span class="pre">Tx</span></code> のみに紐付いているため、再準備に関する以前の注意事項は適用されません。
-Prepared statements that are created in a <code class="docutils literal notranslate"><span class="pre">Tx</span></code> are bound exclusively to it, so the earlier cautions about repreparing do not apply.</p>
-</div>
+<p><code class="docutils literal notranslate"><span class="pre">Tx</span></code> 内で作成されたプリペアードステートメントは <code class="docutils literal notranslate"><span class="pre">Tx</span></code> のみに紐付いているため、再準備に関する前のセクションで説明した注意事項は影響ありません。<code class="docutils literal notranslate"><span class="pre">Tx</span></code> オブジェクトを操作する場合、その操作はバックグラウンドの唯一のコネクションにのみ直接マッピングされます。</p>
 <p>これは <code class="docutils literal notranslate"><span class="pre">Tx</span></code> の中で作成されたプリペアードステートメントはそのトランザクションと分離して用いることができない、ということを意味します。同様に、<code class="docutils literal notranslate"><span class="pre">DB</span></code> で作成されたプリペアードステートメントはトランザクション内で使うことができません。<code class="docutils literal notranslate"><span class="pre">Tx</span></code> と <code class="docutils literal notranslate"><span class="pre">DB</span></code> はことなるコネクションに紐付いているためです。</p>
 <p><code class="docutils literal notranslate"><span class="pre">Tx</span></code> でトランザクション外で準備されたプリペアードステートメントを使う場合、<code class="docutils literal notranslate"><span class="pre">Tx.Stmt()</span></code> を使うことができます。これによりトランザクション外で準備されたステートメントからトランザクション固有のステートメントが作成されます。これは既存のプリペアードステートメントを取得し、トランザクションのコネクションに設定し、実行されるたびにすべてのステートメントを再準備します。この動作と実装は望ましくなく、 <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> のソースコードにも TODO があります。これを使用しないことを推奨します。</p>
 <p>トランザクションでプリペアードステートメントを使う場合は注意が必要です。以下の例について考えてみましょう。</p>
@@ -94,7 +88,7 @@ Prepared statements that are created in a <code class="docutils literal notransl
 <span class="c1">// stmt.Close() runs here!</span>
 </pre></div>
 </div>
-<p>Go1.4以前は <code class="docutils literal notranslate"><span class="pre">sql.Tx</span></code> をCloseするとそれに紐付いているコネクションを開放し、プールに戻します。しかしプリペアードステートメントでCloseを遅延呼び出しすることは、トランザクションが発生した <strong>後</strong> に実行されました。これはコネクションへの同時アクセスにつながり、接続状態に一貫性がありません。Go1.4以前のバージョンを使用する場合、トランザクションがコミットやロールバックされる前に、ステートメントが閉じられていることを確認する必要がありました。 <a class="reference external" href="https://github.com/golang/go/issues/4459">この問題</a> はGo1.4の <a class="reference external" href="https://codereview.appspot.com/131650043">CR 131650043</a> で修正されました。</p>
+<p>Go1.4以前は <code class="docutils literal notranslate"><span class="pre">*sql.Tx</span></code> をCloseするとそれに紐付いているコネクションを開放し、プールに戻します。しかしプリペアードステートメントでCloseを遅延呼び出しすることは、トランザクションが発生した <strong>後</strong> に実行されました。これはコネクションへの同時アクセスにつながり、接続状態に一貫性がありません。Go1.4以前のバージョンを使用する場合、トランザクションがコミットやロールバックされる前に、ステートメントが閉じられていることを確認する必要がありました。 <a class="reference external" href="https://github.com/golang/go/issues/4459">この問題</a> はGo1.4の <a class="reference external" href="https://codereview.appspot.com/131650043">CR 131650043</a> で修正されました。</p>
 </div>
 <div class="section" id="id6">
 <h2>プレースホルダの構文<a class="headerlink" href="#id6" title="このヘッドラインへのパーマリンク">¶</a></h2>

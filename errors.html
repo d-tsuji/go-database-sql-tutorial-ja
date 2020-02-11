@@ -37,15 +37,9 @@
 <h1>エラーハンドリング<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h1>
 <hr class="docutils" />
 <p><code class="docutils literal notranslate"><span class="pre">database/sql</span></code> を使ったほぼ全ての操作で、最後の値としてエラーを返します。常にエラーをチェックし、無視しないでください。</p>
-<p>エラーの動作が特殊な場合、あるいは知っておく必要のある追加事項がある場合がいくつかあります。</p>
-<div class="admonition-todo admonition" id="id2">
-<p class="admonition-title">課題</p>
-<p>直訳なので修正する</p>
-<p>There are a few places where error behavior is special-case, or there’s something additional you might need to know.
-エラーの動作が特殊な場合、あるいは知っておく必要のある追加事項がある場合がいくつかあります。</p>
-</div>
-<div class="section" id="id3">
-<h2>繰り返しのリザルトセットからのエラー<a class="headerlink" href="#id3" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>エラーの動作が特殊な場合や知っておくべき内容がいくつかあります。</p>
+<div class="section" id="id2">
+<h2>繰り返しのリザルトセットからのエラー<a class="headerlink" href="#id2" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>以下のコードについて考えてみましょう。</p>
 <div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Next</span><span class="p">()</span> <span class="p">{</span>
     <span class="c1">// ...</span>
@@ -57,8 +51,8 @@
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">rows.Err()</span></code> からのエラーは <code class="docutils literal notranslate"><span class="pre">rows.Next()</span></code> のループ内での様々なエラーの結果である可能性があります。ループは、正常終了する以外に、様々な理由で終了する可能性があります。そのためループが正常終了したかどうかにかかわらず、常にエラーをチェックする必要があります。異常終了すると自動的に <code class="docutils literal notranslate"><span class="pre">rows.Close()</span></code> が呼ばれますが、これは複数回読んでも悪い影響はありません。</p>
 </div>
-<div class="section" id="id4">
-<h2>リザルトセットを閉じるときのエラー<a class="headerlink" href="#id4" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id3">
+<h2>リザルトセットを閉じるときのエラー<a class="headerlink" href="#id3" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>以前に説明したように、ループを途中で終了する場合は、明示的に <code class="docutils literal notranslate"><span class="pre">sql.Rows</span></code> を閉じる必要があります。ループが正常終了した場合や、エラーが発生した場合は自動的に閉じられますが、誤って以下のように行う場合があります。</p>
 <div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="nx">rows</span><span class="p">.</span><span class="nx">Next</span><span class="p">()</span> <span class="p">{</span>
     <span class="c1">// ...</span>
@@ -113,11 +107,11 @@
 </pre></div>
 </div>
 </div>
-<p>なぜ空のリザルトセットをエラーと見なすのか疑問に思うかもしれません。空のセットについてエラーはありません。その理由は、<code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> メソッドは呼び出し元が <code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> が実際に行を見つけたか区別する必要があるため、この特殊なケースを使う必要があるためです。これがないと、<code class="docutils literal notranslate"><span class="pre">Scan()</span></code> は何も実行せず、変数がデータベースから値を取得できなかったことも気づかないかもしれません。</p>
+<p>なぜ空のリザルトセットをエラーと見なすのか疑問に思うかもしれません。空のリザルトセットは間違っているわけではありません。その理由は、<code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> メソッドは呼び出し元が <code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> が実際に行を見つけたか区別する必要があるためです。これがないと、<code class="docutils literal notranslate"><span class="pre">Scan()</span></code> は何も実行せず、変数がデータベースから値を取得できなかったことも気づかないかもしれません。</p>
 <p><code class="docutils literal notranslate"><span class="pre">QueryRow()</span></code> を使用している場合のみこのエラーが発生するでしょう。それ以外の場面でこのエラーが発生した場合、何が間違っていることをしているでしょう。</p>
 </div>
-<div class="section" id="id5">
-<h2>データベース固有のエラーの特定<a class="headerlink" href="#id5" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id4">
+<h2>データベース固有のエラーの特定<a class="headerlink" href="#id4" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>次のようなコードを書きたくなるかもしれません。</p>
 <div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">rows</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Query</span><span class="p">(</span><span class="s">&quot;SELECT someval FROM sometable&quot;</span><span class="p">)</span>
 <span class="c1">// err contains:</span>
@@ -146,8 +140,8 @@
 </pre></div>
 </div>
 </div>
-<div class="section" id="id7">
-<h2>コネクションエラーの扱い<a class="headerlink" href="#id7" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<div class="section" id="id6">
+<h2>コネクションエラーの扱い<a class="headerlink" href="#id6" title="このヘッドラインへのパーマリンク">¶</a></h2>
 <p>データベースへの接続が切断、強制終了、またはエラーが発生した場合はどうなりますか？</p>
 <p>これが発生した場合は失敗したステートメントをリトライするロジックを実装する必要はありません。<code class="docutils literal notranslate"><span class="pre">database/sql</span></code> にある <a class="reference external" href="connection-pool.html">connection pooling</a> の一部として、失敗した接続の処理が組み込まれています。クエリや他のステートメントを実行し、コネクションに障害がある場合、Goは新しいコネクションを再度Openします。あるいはコネクションプールから別のコネクションを取得します。最大10回再試行します。</p>
 <p>ただし、意図しない結果が生じる可能性があります。 他のエラー状態が発生すると、一部のタイプのエラーが再試行される場合があります。 これはドライバー固有の場合もあります。 MySQLドライバーで発生した1つの例は、 <code class="docutils literal notranslate"><span class="pre">KILL</span></code> を使用して望ましくないステートメント(長時間実行されるクエリなど)をキャンセルすると、ステートメントが最大10回再試行されることです。</p>

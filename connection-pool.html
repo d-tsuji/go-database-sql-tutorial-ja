@@ -38,12 +38,12 @@
 <hr class="docutils" />
 <p><code class="docutils literal notranslate"><span class="pre">database/sql</span></code> パッケージには基本的なコネクションプールがあります。制御したり検査したりするための多くの機能はありませんが、知っておくと便利なことがあります。</p>
 <ul class="simple">
-<li><p>コネクションプーリングとは、単一のデータベースに2つの連続するステートメントを実行するときに、2つのコネクションが開かれ、独立して実行されることになります。プログラマにとって、コードが誤作動する理由に混乱することはよくあることです。例えば <code class="docutils literal notranslate"><span class="pre">INSERT</span></code> は テーブルへのロックを取得しないコネクション上にあるため <code class="docutils literal notranslate"><span class="pre">LOCK</span> <span class="pre">TABLES</span></code> に続いて <code class="docutils literal notranslate"><span class="pre">INSERT</span></code> をブロックできます。</p></li>
-<li><p>コネクションは必要なときに生成され、プールには自由な(free)コネクションはありません。</p></li>
-<li><p>デフォルトではコネクションの数に制限はありません。一度に多くのことをしようとすると任意の数のコネクションを生成することができます。ただしデータベースは &quot;接続が多すぎます&quot; などのエラーを返すことがあります。</p></li>
+<li><p>コネクションプーリングとは、単一のデータベースに2つの連続するステートメントを実行するときに、2つのコネクションが開かれ、独立して実行される可能性があることになります。プログラマにとって、コードがうまく動かない原因に混乱することはよくあることです。例えば <code class="docutils literal notranslate"><span class="pre">LOCK</span> <span class="pre">TABLES</span></code> の後の <code class="docutils literal notranslate"><span class="pre">INSERT</span></code> はブロックされる可能性があります。<code class="docutils literal notranslate"><span class="pre">INSERT</span></code> はテーブルのロックを取得したコネクションとは別のコネクションにある可能性があるためです。</p></li>
+<li><p>コネクションは必要なときに生成され、プール内には空いているコネクションはありません。</p></li>
+<li><p>デフォルトではコネクションの数に制限はありません。一度に多くのことをしようとすると任意の数のコネクションを生成することができます。ただしデータベースは「接続が多すぎます」などのエラーを返すことがあります。</p></li>
 <li><p>Go1.1以降では、<code class="docutils literal notranslate"><span class="pre">db.SetMaxIdleConns(N)</span></code> を使用して、プール内のアイドルコネクションの数を制限できます。ただし、これはプールサイズを制限しません。</p></li>
 <li><p>Go1.2.1以降では、データベースへのOpenしている合計のコネクション数を制限するために <code class="docutils literal notranslate"><span class="pre">db.SetMaxIdleConns(N)</span></code> を使うことができます。残念なことに <a class="reference external" href="https://groups.google.com/d/msg/golang-dev/jOTqHxI09ns/x79ajll-ab4J">デッドロックのバグ</a> ( <a class="reference external" href="https://code.google.com/p/go/source/detail?r=8a7ac002f840">修正済</a> ) により <code class="docutils literal notranslate"><span class="pre">db.SetMaxOpenConns(N)</span></code> が1.2では安全に使用できなくなります。</p></li>
-<li><p>コネクションは非常に早く再利用されるようになります。<code class="docutils literal notranslate"><span class="pre">db.SetMaxIdleConns(N)</span></code> でアイドルコネクション数を高い値にしておくことはリサイクルされるチェーンが減少し、再利用のためのコネクションを保持するようになります。</p></li>
+<li><p>コネクションは非常に早く再利用されるようになります。<code class="docutils literal notranslate"><span class="pre">db.SetMaxIdleConns(N)</span></code> でアイドルコネクション数を高い値にしておくことでこの再生成を減らすことができ、再利用のためのコネクションを維持できます。</p></li>
 <li><p>コネクションを長時間アイドル状態にしておくと問題が発生する場合があります。(<a class="reference external" href="https://github.com/go-sql-driver/mysql/issues/257">このような</a> Microsoft AzureのMySQLに関するものです。アイドル時間が長すぎることによってコネクションのタイムアウトが発生する場合、<code class="docutils literal notranslate"><span class="pre">db.SetMaxIdleConns(0)</span></code> を試してみてください。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">db.SetConnMaxLifetime(duration)</span></code> を設定することにより、コネクションを再利用できる最大時間を指定できます。これは、長時間有効なコネクションを再利用するとネットワークの問題が発生する可能性があるためです。これにより、未使用のコネクションが遅延して閉じられます。つまり、有効期限が切れた接続を閉じることが延期される場合があります。</p></li>
 </ul>
