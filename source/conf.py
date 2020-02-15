@@ -82,6 +82,6 @@ html_sidebars = {
 latex_docclass = {'manual': 'jsbook'}
 
 # -- Options for sphinxcontrib-githubribbon ----------------------------------
-github_ribbon_repo = 'd-tsuji/go-introduction-book'
+github_ribbon_repo = 'd-tsuji/go-database-sql-tutorial-ja'
 github_ribbon_position = 'right'
 github_ribbon_color = "gray"
