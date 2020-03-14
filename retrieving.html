@@ -36,7 +36,7 @@
   <a href="https://github.com/d-tsuji/go-database-sql-tutorial-ja"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/a6677b08c955af8400f44c6298f40e7d19cc5b2d/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677261795f3664366436642e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png"></a><div class="section" id="id1">
 <h1>リザルトセットの取得<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h1>
 <hr class="docutils" />
-<p>データストアから結果を取得する慣用的な方法がいくつかあります。</p>
+<p>データストアから結果を取得するためには、いくつかの決まった手順があります。</p>
 <ol class="arabic simple">
 <li><p>行を返すクエリを発行します。</p></li>
 <li><p>繰り返し用いるステートメントを準備し、複数回の実行と破棄をします。</p></li>
@@ -46,7 +46,7 @@
 <p>Goの <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> の関数名は重要です。関数名に <code class="docutils literal notranslate"><span class="pre">Query</span></code> という文字を含んでいれば、データベースにクエリを発行し、(空行も許す)行の集合を返すために設計されているとわかります。行を返さないステートメントの場合、 <code class="docutils literal notranslate"><span class="pre">Query</span></code> 関数を使うべきではなく <code class="docutils literal notranslate"><span class="pre">Exec()</span></code> を用いるべきです。</p>
 <div class="section" id="id2">
 <h2>データベースからのデータの取得<a class="headerlink" href="#id2" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>データベースにクエリを発行して、結果を取得する方法の例を見てみましょう。<code class="docutils literal notranslate"><span class="pre">user</span></code> テーブルから <code class="docutils literal notranslate"><span class="pre">id</span></code> が1であるユーザを取得し、<code class="docutils literal notranslate"><span class="pre">id</span></code> と <code class="docutils literal notranslate"><span class="pre">name</span></code> を表示します。<code class="docutils literal notranslate"><span class="pre">rows.Scan()</span></code> を使用して1度に1行ずつ、変数に結果を割り当てます。</p>
+<p>データベースにクエリを発行して、結果を取得する方法の例を見てみましょう。<code class="docutils literal notranslate"><span class="pre">user</span></code> テーブルから <code class="docutils literal notranslate"><span class="pre">id</span></code> が 1 であるユーザを取得し、<code class="docutils literal notranslate"><span class="pre">id</span></code> と <code class="docutils literal notranslate"><span class="pre">name</span></code> を表示します。<code class="docutils literal notranslate"><span class="pre">rows.Scan()</span></code> を使用して 1 度に 1 行ずつ、変数に結果を割り当てます。</p>
 <div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kd">var</span> <span class="p">(</span>
     <span class="nx">id</span> <span class="kt">int</span>
     <span class="nx">name</span> <span class="kt">string</span>
@@ -77,7 +77,7 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">rows.Scan()</span></code> を用いて、それぞれの行のカラムを結果を変数に読み込みます。</p></li>
 <li><p>行の反復処理が完了したら、エラーをチェックします。</p></li>
 </ol>
-<p>これはGoで行う唯一の方法です。たとえば行を連想配列として取得することはできません。なぜならすべてが強く型付けされているためです。次に示すように、適切な型の変数を宣言し、ポインタとして渡す必要があります。</p>
+<p>これは Go で行う唯一の方法です。たとえば行を連想配列として取得することはできません。なぜならすべてが強く型付けされているためです。次に示すように、適切な型の変数を宣言し、ポインタとして渡す必要があります。</p>
 <p>上記の処理は間違えやすく、予期せぬ結果を招く可能性があります。</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">rows.Next()</span></code> のループの最後に必ずエラーをチェックする必要があります。ループ中にエラーが発生した場合、エラーについて知る必要があります。すべての行を処理するまで、ループが繰り返されるわけではありません。</p></li>
@@ -89,7 +89,7 @@
 </div>
 <div class="section" id="scan">
 <h2>Scan() の動作方法<a class="headerlink" href="#scan" title="このヘッドラインへのパーマリンク">¶</a></h2>
-<p>行を反復処理し、結果を変数にスキャンすると、Goは内部でデータ型の変換を行います。これは結果を格納する変数の型に基づいています。これに注意することで、コードをきれいにし、繰り返しの作業を避けることができます。</p>
+<p>行を反復処理し、結果を変数にスキャンすると、Go は内部でデータ型の変換を行います。これは結果を格納する変数の型に基づいています。これに注意することで、コードをきれいにし、繰り返しの作業を避けることができます。</p>
 <p>例えば、<code class="docutils literal notranslate"><span class="pre">VARCHAR(45)</span></code> などの文字列のカラムとして定義されたテーブルからいくつかの行をフェッチするとします。ただしテーブルには常に数値を含んでいるとします。文字列にポインタを渡すと、Goはバイトを文字列にコピーします。これで <code class="docutils literal notranslate"><span class="pre">strconv.ParseInt()</span></code> などを用いて値を数値に変換することができます。SQL操作のエラーをチェックする必要があり、また整数の解析エラーをチェックする必要があります。これは面倒で退屈です。</p>
 <p>その代わりに、単に <code class="docutils literal notranslate"><span class="pre">Scan()</span></code> を数値へのポインタに渡すことができます。Goは数値であることを検出して <code class="docutils literal notranslate"><span class="pre">strconv.ParseInt()</span></code> を呼び出します。変換時にエラーが発生した場合、<code class="docutils literal notranslate"><span class="pre">Scan()</span></code> を呼び出すとエラーが返されます。コードはすっきりと小さくなりました。これは <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> の推奨される使い方です。</p>
 </div>

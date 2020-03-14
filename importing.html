@@ -35,17 +35,18 @@
             
   <a href="https://github.com/d-tsuji/go-database-sql-tutorial-ja"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/a6677b08c955af8400f44c6298f40e7d19cc5b2d/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677261795f3664366436642e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png"></a><div class="section" id="id1">
 <h1>ドライバのインポート<a class="headerlink" href="#id1" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<hr class="docutils" />
 <p><code class="docutils literal notranslate"><span class="pre">database/sql</span></code> を使用するにはパッケージそのもののインポートと、使いたい特定のデータベースのドライバーをインポートする必要があります。</p>
-<p>通常はドライバーのパッケージを直接使用しないでください。ただし一部のドライバーは直接使用することを推奨しています。(私たちの意見では、通常良くない方法です。)可能であれば <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> で定義された型のみで実装すべきです。これは実装のドライバー依存を防ぎ、基盤となるドライバーやデータベースを変更するときに、最小限のコードの変更でできるようにします。また提供されている特定のドライバーのアドホックな書き方をする代わりに、Goの慣例的な書き方をすることができます。</p>
-<p>このドキュメントでは例として &#64;julienschmidt と &#64;arnehormann から提供されている、すばらしい <a class="reference external" href="https://github.com/go-sql-driver/mysql">MySQLdrivers</a> を用います。</p>
-<p>Goの先頭のコードに以下を追加します。</p>
+<p>通常はドライバーのパッケージを直接使用しないでください。ただし一部のドライバーは直接使用することを推奨しています。(私たちの意見では、通常良くない方法です。)可能であれば <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> で定義された型のみを使って実装すべきです。このようにすることでドライバー依存の実装を防ぎ、基盤となるドライバーやデータベースを変更するときに、最小限のコードの変更でできるようにします。また特定のドライバーが提供するアドホックな書き方をする代わりに Go の標準的な書き方をすることができます。</p>
+<p>このドキュメントではドライバーの例として &#64;julienschmidt と &#64;arnehormann から提供されている、優秀な <a class="reference external" href="https://github.com/go-sql-driver/mysql">MySQLdrivers</a> を用います。</p>
+<p>Go の先頭のコードに以下を追加します。</p>
 <div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="p">(</span>
     <span class="s">&quot;database/sql&quot;</span>
     <span class="nx">_</span> <span class="s">&quot;github.com/go-sql-driver/mysql&quot;</span>
 <span class="p">)</span>
 </pre></div>
 </div>
-<p>ドライバーを無名で読み込んでいることに注意してください。パッケージ修飾子として <code class="docutils literal notranslate"><span class="pre">_</span></code> を用いているため、パッケージで公開されている関数をコード内で使うことはありません。内部ではドライバーは <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> パッケージで使用できるように登録しますが、一般に実行時のinit関数を除いて何も影響を及ぼしません。</p>
+<p>ドライバーをブランクインポートしていることに注意してください。パッケージ修飾子として <code class="docutils literal notranslate"><span class="pre">_</span></code> を用いているため、パッケージで公開されている関数をコード内で使うことはありません。内部では <code class="docutils literal notranslate"><span class="pre">database/sql</span></code> パッケージでドライバーを使用できるようにしますが、通常は実行時の init 関数を除いて影響はありません。</p>
 <p>さぁ、データベースにアクセスする準備が整いました。</p>
 <div class="line-block">
 <div class="line">前に戻る: <a class="reference external" href="overview.html">Overview of Go's database/sql Package</a></div>
