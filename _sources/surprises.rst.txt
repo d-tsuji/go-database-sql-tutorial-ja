@@ -4,13 +4,7 @@
 
 ---------------------------------
 
-``database/sql`` は慣れれば簡単ですが、サポートするユースケースの微妙さに驚くかもしれません。これはGoのコアライブラリに共通です。
-
-.. todo:: 
-
-   subtlety の訳は何になるか？「微妙さ」ではない気がする
-
-   Although database/sql is simple once you’re accustomed to it, you might be surprised by the subtlety of use cases it supports. This is common to Go’s core libraries.
+``database/sql`` は慣れれば簡単ですが、サポートするユースケースの微妙さに驚くかもしれません。これは Go のコアライブラリに共通です。
 
 リソースの枯渇
 ===================
